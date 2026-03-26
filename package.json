@@ -1,0 +1,47 @@
+{
+  "name": "@webiny/upgrades-v6",
+  "version": "0.0.1",
+  "type": "module",
+  "bin": "./index.js",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "prettier": "prettier \"**/**/*.{js,ts,json}\" --config .prettierrc.js",
+    "prettier:check": "yarn prettier --check",
+    "prettier:fix": "yarn prettier --write",
+    "eslint": "eslint \"**/*.{js,ts}\" --max-warnings=0",
+    "eslint:fix": "yarn eslint --fix",
+    "lint:fix": "yarn eslint --fix && yarn prettier --write"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "execa": "^9.6.1",
+    "fast-glob": "^3.3.3",
+    "fs-extra": "^11.3.4",
+    "json5": "^2.2.3",
+    "lodash": "^4.17.23",
+    "semver": "^7.7.4",
+    "ts-morph": "^27.0.2",
+    "tsx": "^4.21.0",
+    "typescript": "6.0.2",
+    "yargs": "^18.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
+    "@types/fs-extra": "^11.0.4",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^24.12.0",
+    "@types/semver": "^7.7.1",
+    "@types/yargs": "^17.0.35",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
+    "eslint": "^10.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "prettier": "3.8.1"
+  },
+  "packageManager": "yarn@4.6.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
