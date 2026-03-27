@@ -16,16 +16,9 @@ const compat = new FlatCompat({
     allConfig: js.configs.all
 });
 
-function getNoUnusedVars() {
-    if ("ESLINT_NO_UNUSED_VARS" in process.env) {
-        return parseInt(process.env["ESLINT_NO_UNUSED_VARS"]);
-    }
-    return 1;
-}
-
 export default defineConfig([
     {
-        files: ["**/*.ts"],
+        files: ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.js", "./src/**/*.jsx"],
         languageOptions: {
             parser: tsParser,
             parserOptions: {
@@ -44,7 +37,7 @@ export default defineConfig([
         },
         extends: compat.extends("plugin:@typescript-eslint/recommended"),
         rules: {
-            "import/no-unresolved": 0,
+            "import/no-unresolved": "off",
             "@typescript-eslint/no-namespace": "off",
             "@typescript-eslint/explicit-function-return-type": "off",
             "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -58,11 +51,11 @@ export default defineConfig([
                 }
             ],
             "@typescript-eslint/no-restricted-types": "error",
-            "@typescript-eslint/no-use-before-define": 0,
-            "@typescript-eslint/no-unused-vars": getNoUnusedVars(),
-            "@typescript-eslint/no-var-requires": 0,
-            "@typescript-eslint/no-explicit-any": 0,
-            "@typescript-eslint/no-non-null-assertion": 0,
+            "@typescript-eslint/no-use-before-define": "error",
+            "@typescript-eslint/no-unused-vars": "error",
+            "@typescript-eslint/no-var-requires": "error",
+            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-non-null-assertion": "error",
             "@typescript-eslint/no-empty-object-type": [
                 "error",
                 {
@@ -70,9 +63,9 @@ export default defineConfig([
                     allowObjectTypes: "never"
                 }
             ],
-            "@typescript-eslint/no-unused-expressions": "off",
+            "@typescript-eslint/no-unused-expressions": "error",
             curly: ["error"]
         }
     },
-    globalIgnores(["node_modules/", "dist/", "build/", "**/*.d.ts"])
+    globalIgnores([".yarn/", "node_modules/", "dist/", "build/", "**/*.d.ts"])
 ]);
