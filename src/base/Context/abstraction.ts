@@ -1,5 +1,5 @@
-import { createAbstraction } from "~/utils/createAbstraction.js";
-import type { SemVer } from "semver";
+import { createAbstraction } from "../../utils/createAbstraction.js";
+import { Version } from "../Version/index.js";
 
 interface IContext {
     cwd: string;
@@ -11,11 +11,24 @@ interface IContext {
     /**
      * Version parsed via semver
      */
-    targetVersion: SemVer;
+    targetVersion: Version;
     /**
-     * Current version of webiny package.
+     * Version of webiny read from node_modules at startup. Never changes.
      */
-    currentVersion: SemVer;
+    installedVersion: Version;
+    /**
+     * Logical current version — starts as installedVersion, advances to each
+     * upgrade's version as upgrades are executed.
+     */
+    currentVersion: Version;
+    /**
+     * Advances currentVersion to the given version after an upgrade executes.
+     */
+    setCurrentVersion(version: Version): void;
+    /**
+     * Resolves given path segments relative to context's cwd.
+     */
+    resolve(...segments: string[]): string;
 }
 
 export const Context = createAbstraction<IContext>("Base/Context");

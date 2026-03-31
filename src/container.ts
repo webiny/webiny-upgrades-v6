@@ -1,32 +1,147 @@
-import { LoggerFeature } from "~/service/Logger/index.js";
+import path from "node:path";
+import { Version } from "./base/Version/index.js";
 import { Container } from "@webiny/di";
-import { InputFeature } from "~/base/Input/index.js";
-import { NpmFeature } from "~/service/Npm/index.js";
-import { YarnFeature } from "~/service/Yarn/index.js";
-import { UpgradeHandlerFeature } from "~/base/UpgradeHandler/index.js";
-import { PackageJsonFeature } from "~/service/PackageJson/index.js";
+import { Logger, LoggerFeature } from "./base/Logger/index.js";
+import { InputFeature } from "./base/Input/index.js";
+import { PackageJsonFeature, PackageJsonService } from "./service/PackageJson/index.js";
+import { PackageManagerFeature } from "./service/PackageManager/index.js";
+import { RegistryFeature, RegistryService } from "./service/Registry/index.js";
+import { ContextFeature } from "./base/Context/index.js";
+import { ContainerFeature } from "./base/Container/index.js";
+import { GitFeature } from "./service/Git/index.js";
+import { UpWebinyFeature } from "./tool/UpWebiny/index.js";
+import { PackageJsonToolFeature } from "./tool/PackageJsonTool/index.js";
+import { DependencyGuardFeature } from "./tool/DependencyGuard/index.js";
+import { UpgradeHistoryFeature } from "./tool/UpgradeHistory/index.js";
+import { UpgradeHandlerFeature } from "./service/UpgradeHandler/index.js";
+import { UpgradeRunnerFeature } from "./service/UpgradeRunner/index.js";
+import { ApplicationFeature } from "./base/Application/index.js";
+import { Responder, ResponderFeature } from "./base/Responder/index.js";
+import { TimerFeature } from "./base/Timer/index.js";
+import { ReferencesFeature } from "./service/References/index.js";
 
 interface ICreateContainerParams {
     version: string;
-    debug: boolean;
+    logLevel: "debug" | "info" | "warn" | "error";
+    json: boolean;
+    forceUpgrade: boolean;
     registry: string;
     cwd: string;
+    packageManager?: "yarn" | "pnpm" | "npm";
+    skipDependencyGuard: boolean;
+    dryRun: boolean;
 }
 
-export const createContainer = (params: ICreateContainerParams) => {
+const resolveTargetVersion = async (container: Container, version: string): Promise<Version> => {
+    const npm = container.resolve(RegistryService);
+    if (!version || version === "latest") {
+        const result = await npm.getLatestVersion("webiny");
+        if (!result) {
+            throw new Error("Failed to fetch latest version of Webiny.");
+        }
+        return result;
+    }
+    const result = await npm.getVersion("webiny", version);
+    if (!result) {
+        throw new Error(`Webiny version "${version}" does not exist in the registry.`);
+    }
+    return result;
+};
+
+const loadInstalledVersion = (container: Container, cwd: string): Version => {
+    const packageJsonService = container.resolve(PackageJsonService);
+    const packageJsonPath = path.join(cwd, "node_modules", "webiny", "package.json");
+    const packageJson = packageJsonService.load(packageJsonPath);
+    if (!packageJson) {
+        throw new Error(`Failed to load ${packageJsonPath}.`);
+    }
+    const installedVersion = Version.parse(packageJson.raw.version);
+    if (!installedVersion) {
+        throw new Error(
+            `Failed to parse installed Webiny version from package.json: ${packageJson.raw.version}`
+        );
+    }
+    return installedVersion;
+};
+
+export const createContainer = async (params: ICreateContainerParams): Promise<Container> => {
     const container = new Container();
     /**
-     * Basic features first. These have no dependencies on other features, so we can register them first.
+     * Container — registers itself so it can be injected as a dependency.
+     */
+    ContainerFeature.register(container);
+
+    /**
+     * Infrastructure — no dependencies on other features.
      */
     LoggerFeature.register(container, {
-        debug: params.debug || false
+        logLevel: params.logLevel,
+        json: params.json
     });
+    /**
+     * Responder — handles process termination and termination signal output.
+     */
+    ResponderFeature.register(container);
+    TimerFeature.register(container);
     InputFeature.register(container, params);
+
+    /**
+     * Services — depend on infrastructure only.
+     */
+    PackageJsonFeature.register(container);
+    PackageManagerFeature.register(container);
+    RegistryFeature.register(container);
+    ReferencesFeature.register(container);
+
+    const logger = container.resolve(Logger);
+    /**
+     * Context — pre-compute async data, then register synchronously.
+     */
+    const responder = container.resolve(Responder);
+    let targetVersion: Version | null = null;
+    let installedVersion: Version | null = null;
+    try {
+        logger.debug("Resolving target version...");
+        targetVersion = await resolveTargetVersion(container, params.version);
+        logger.debug(`Target version resolved: ${targetVersion.raw}`);
+        logger.debug("Loading installed version...");
+        installedVersion = loadInstalledVersion(container, params.cwd);
+        logger.debug(`Installed version loaded: ${installedVersion.raw}`);
+    } catch (ex) {
+        responder.error(ex.message, 0);
+        process.exit();
+    }
+    ContextFeature.register(container, {
+        cwd: params.cwd,
+        registry: params.registry,
+        inputVersion: params.version,
+        targetVersion,
+        installedVersion
+    });
+
+    /**
+     * Tools — depend on services and context.
+     */
+    GitFeature.register(container);
+    UpWebinyFeature.register(container);
+    PackageJsonToolFeature.register(container);
+    DependencyGuardFeature.register(container);
+    UpgradeHistoryFeature.register(container);
+
+    /**
+     * Handler — depends on everything above.
+     */
     UpgradeHandlerFeature.register(container);
 
-    YarnFeature.register(container);
-    NpmFeature.register(container);
-    PackageJsonFeature.register(container);
+    /**
+     * Runner — depends on context, handler, and tools. Loads and executes the upgrade script.
+     */
+    UpgradeRunnerFeature.register(container);
+
+    /**
+     * Application — top-level orchestrator. Runs the upgrade and handles responses.
+     */
+    ApplicationFeature.register(container);
 
     return container;
 };

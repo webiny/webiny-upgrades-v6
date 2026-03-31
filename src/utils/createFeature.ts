@@ -18,3 +18,11 @@ export function createFeature<TRegister>(def: {
 
     return feature as FeatureDefinition<TRegister>;
 }
+
+export const isFeature = (obj: unknown): obj is FeatureDefinition<unknown> => {
+    return (
+        typeof obj === "object" &&
+        obj !== null &&
+        Reflect.getMetadata("wby:upgrades:isFeature", obj) === true
+    );
+};

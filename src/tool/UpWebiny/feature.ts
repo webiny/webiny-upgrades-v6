@@ -1,4 +1,4 @@
-import { createFeature } from "~/utils/createFeature.js";
+import { createFeature } from "../../utils/createFeature.js";
 import { UpWebiny } from "./UpWebiny.js";
 
 export const UpWebinyFeature = createFeature({

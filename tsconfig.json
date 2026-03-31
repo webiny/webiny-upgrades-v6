@@ -13,11 +13,8 @@
     "strict": true,
     "noImplicitAny": true,
     "useUnknownInCatchVariables": false,
-    "skipLibCheck": true,
-    "paths": {
-      "~/*": ["./src/*"]
-    }
+    "skipLibCheck": true
   },
-  "include": ["./**/*.ts"],
+  "include": ["./src/**/*.ts"],
   "exclude": ["node_modules"]
 }

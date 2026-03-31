@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { register } from "tsx/esm/api";
+import { fileURLToPath } from "node:url";
 
 register({
-    tsconfig: new URL("./tsconfig.json", import.meta.url).pathname
+    tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url))
 });
 
 await import("./src/index.ts");

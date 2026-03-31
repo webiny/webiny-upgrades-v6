@@ -1,4 +1,4 @@
-import { createFeature } from "~/utils/createFeature.js";
+import { createFeature } from "../../utils/createFeature.js";
 import { Upgrade } from "./Upgrade.js";
 
 export default createFeature({

@@ -4,8 +4,8 @@ import {
 } from "./abstraction.js";
 import { loadJsonFileSync } from "load-json-file";
 import { writeJsonFileSync } from "write-json-file";
-import { PackageJsonFile } from "~/service/PackageJson/PackageJsonFile.js";
-import { Logger } from "~/service/Logger/index.js";
+import { PackageJsonFile } from "../../service/PackageJson/PackageJsonFile.js";
+import { Logger } from "../../base/Logger/index.js";
 
 class PackageJsonServiceImpl implements PackageJsonServiceAbstraction.Interface {
     public constructor(private readonly logger: Logger.Interface) {}

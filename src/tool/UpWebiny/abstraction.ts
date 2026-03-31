@@ -1,9 +1,8 @@
-import { createAbstraction } from "~/utils/createAbstraction.js";
-import type { SemVer } from "semver";
+import { createAbstraction } from "../../utils/createAbstraction.js";
+import { Version } from "../../base/Version/index.js";
 
 interface IUpWebinyParams {
-    version: SemVer;
-    executeYarn: boolean;
+    version: Version;
 }
 
 interface IUpWebiny {

@@ -1,22 +1,15 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import tsParser from "@typescript-eslint/parser";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import _import from "eslint-plugin-import";
-import { FlatCompat } from "@eslint/eslintrc";
-import js from "@eslint/js";
+import importX from "eslint-plugin-import-x";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
-
 export default defineConfig([
+    ...typescriptEslint.configs["flat/recommended"],
     {
         files: ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.js", "./src/**/*.jsx"],
         languageOptions: {
@@ -33,11 +26,10 @@ export default defineConfig([
         },
         plugins: {
             "@typescript-eslint": typescriptEslint,
-            import: _import
+            "import-x": importX
         },
-        extends: compat.extends("plugin:@typescript-eslint/recommended"),
         rules: {
-            "import/no-unresolved": "off",
+            "import-x/no-unresolved": "off",
             "@typescript-eslint/no-namespace": "off",
             "@typescript-eslint/explicit-function-return-type": "off",
             "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -52,10 +44,10 @@ export default defineConfig([
             ],
             "@typescript-eslint/no-restricted-types": "error",
             "@typescript-eslint/no-use-before-define": "error",
-            "@typescript-eslint/no-unused-vars": "error",
+            "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
             "@typescript-eslint/no-var-requires": "error",
             "@typescript-eslint/no-explicit-any": "off",
-            "@typescript-eslint/no-non-null-assertion": "error",
+            "@typescript-eslint/no-non-null-assertion": "off",
             "@typescript-eslint/no-empty-object-type": [
                 "error",
                 {
@@ -67,5 +59,5 @@ export default defineConfig([
             curly: ["error"]
         }
     },
-    globalIgnores([".yarn/", "node_modules/", "dist/", "build/", "**/*.d.ts"])
+    globalIgnores([".yarn/", "node_modules/", "dist/", "build/", "coverage/", "**/*.d.ts"])
 ]);

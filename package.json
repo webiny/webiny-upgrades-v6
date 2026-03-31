@@ -1,9 +1,12 @@
 {
-  "name": "@webiny/upgrades-v6",
-  "version": "0.0.1",
+  "name": "webiny-upgrades-v6",
+  "version": "1.0.0",
   "type": "module",
   "bin": "./index.js",
   "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
     "build": "tsc --noEmit",
     "prettier": "prettier \"**/**/*.{js,ts,json}\" --config .prettierrc.js",
     "prettier:check": "yarn prettier --check",
@@ -27,8 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^10.0.1",
     "@types/fs-extra": "^11.0.4",
     "@types/lodash": "^4.17.24",
     "@types/node": "^24.12.0",
@@ -36,11 +37,13 @@
     "@types/yargs": "^17.0.35",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
+    "@vitest/coverage-v8": "^4.1.2",
     "adio": "^2.1.0",
     "eslint": "^10.1.0",
-    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-import-x": "^4.16.2",
     "lodash": "^4.17.23",
-    "prettier": "3.8.1"
+    "prettier": "3.8.1",
+    "vitest": "^4.1.2"
   },
   "engines": {
     "node": ">=24.0.0"

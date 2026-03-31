@@ -1,34 +1,57 @@
-import { createAbstraction } from "~/utils/createAbstraction.js";
+import { createAbstraction } from "../../utils/createAbstraction.js";
 import type { PackageJson as PackageJsonFileData } from "type-fest";
-import type { SemVer } from "semver";
+import type { Version } from "../../base/Version/index.js";
+
+interface IDependencies {
+    [name: string]: string;
+}
+
+interface IDevDependencies {
+    [name: string]: string;
+}
+
+interface IPeerDependencies {
+    [name: string]: string;
+}
+
+interface IResolutions {
+    [name: string]: string;
+}
 
 interface IPackageJsonFile {
     readonly path: string;
 
     readonly raw: Required<PackageJsonFileData>;
 
-    getDependencies(): Record<string, string>;
-    getDevDependencies(): Record<string, string>;
-    getPeerDependencies(): Record<string, string>;
-    getResolutions(): Record<string, string>;
+    getDependencies(): IDependencies;
+    getDevDependencies(): IDevDependencies;
+    getPeerDependencies(): IPeerDependencies;
+    getResolutions(): IResolutions;
 
-    setDependency(name: string, version: string | SemVer): void;
+    setDependency(name: string, version: string | Version): void;
+    setDependencyIfExists(name: string, version: string | Version): void;
     removeDependency(name: string): void;
     getDependency(name: string): string | null;
 
-    setDevDependency(name: string, version: string | SemVer): void;
+    setDevDependency(name: string, version: string | Version): void;
+    setDevDependencyIfExists(name: string, version: string | Version): void;
     removeDevDependency(name: string): void;
     getDevDependency(name: string): string | null;
 
-    setPeerDependency(name: string, version: string | SemVer): void;
+    setPeerDependency(name: string, version: string | Version): void;
+    setPeerDependencyIfExists(name: string, version: string | Version): void;
     removePeerDependency(name: string): void;
     getPeerDependency(name: string): string | null;
 
-    setResolution(name: string, version: string | SemVer): void;
+    setResolution(name: string, version: string | Version): void;
+    setResolutionIfExists(name: string, version: string | Version): void;
     removeResolution(name: string): void;
     getResolution(name: string): string | null;
 
     getVersion(): string | null;
+
+    get(key: string): unknown;
+    set(key: string, value: unknown): void;
 }
 
 export const PackageJsonFile = createAbstraction<IPackageJsonFile>("Service/PackageJsonFile");
@@ -36,6 +59,10 @@ export const PackageJsonFile = createAbstraction<IPackageJsonFile>("Service/Pack
 export namespace PackageJsonFile {
     export type Interface = IPackageJsonFile;
     export type Data = Required<PackageJsonFileData>;
+    export type Dependencies = IDependencies;
+    export type DevDependencies = IDevDependencies;
+    export type PeerDependencies = IPeerDependencies;
+    export type Resolutions = IResolutions;
 }
 
 interface IPackageJsonService {
