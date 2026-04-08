@@ -11,7 +11,7 @@ import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
  */
 export const registerUpgradeDeps = (
     container: DIContainer,
-    file: PackageJsonFile.Interface,
+    file: PackageJsonFile.Interface | null
 ): void => {
     container.registerInstance(UpWebiny, { execute: vi.fn() });
     container.registerInstance(PackageJsonTool, {

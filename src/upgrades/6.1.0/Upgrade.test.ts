@@ -16,7 +16,7 @@ const params = (target: string, current: string) => ({
     currentVersion: v(current)
 });
 
-const createContainer = (file: PackageJsonFile.Interface = createMockPackageJsonFile()) => {
+const createContainer = (file: PackageJsonFile.Interface | null = createMockPackageJsonFile()) => {
     const container = new Container();
     registerUpgradeDeps(container, file);
     container.register(Upgrade610);
@@ -102,7 +102,7 @@ describe("Upgrade 6.1.0 - execute", () => {
     });
 
     it("throws when package.json cannot be loaded", async () => {
-        const container = createContainer();
+        const container = createContainer(null);
         const upgrade = container.resolve(Upgrade);
 
         await expect(upgrade.execute()).rejects.toThrow("Failed to load package.json");

@@ -7,7 +7,7 @@ import { Container } from "@webiny/di";
 import { Upgrade } from "../base/Upgrade/abstraction.js";
 import { isFeature } from "../utils/createFeature.js";
 import { registerUpgradeDeps } from "../__tests__/utils/mockUpgradeDeps.js";
-import {createMockPackageJsonFile} from "./__tests__/mockPackageJsonFile.js";
+import { createMockPackageJsonFile } from "./__tests__/mockPackageJsonFile.js";
 
 const upgradesDir = import.meta.dirname;
 
