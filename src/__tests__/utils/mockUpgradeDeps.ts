@@ -4,7 +4,6 @@ import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { ReferencesService } from "../../service/References/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
-import { createMockPackageJsonFile } from "./mockPackageJsonFile.js";
 
 /**
  * Registers mock instances of UpWebiny, PackageJsonTool, and ReferencesService into the container.
@@ -12,7 +11,7 @@ import { createMockPackageJsonFile } from "./mockPackageJsonFile.js";
  */
 export const registerUpgradeDeps = (
     container: DIContainer,
-    file: PackageJsonFile.Interface | null = createMockPackageJsonFile()
+    file: PackageJsonFile.Interface,
 ): void => {
     container.registerInstance(UpWebiny, { execute: vi.fn() });
     container.registerInstance(PackageJsonTool, {

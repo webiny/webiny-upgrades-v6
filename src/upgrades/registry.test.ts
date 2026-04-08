@@ -7,6 +7,7 @@ import { Container } from "@webiny/di";
 import { Upgrade } from "../base/Upgrade/abstraction.js";
 import { isFeature } from "../utils/createFeature.js";
 import { registerUpgradeDeps } from "../__tests__/utils/mockUpgradeDeps.js";
+import {createMockPackageJsonFile} from "./__tests__/mockPackageJsonFile.js";
 
 const upgradesDir = import.meta.dirname;
 
@@ -37,7 +38,7 @@ describe("upgrades registry", () => {
                 const indexPath = path.join(upgradesDir, dir.name, "index.ts");
                 const mod = await import(pathToFileURL(indexPath).href);
                 const container = new Container();
-                registerUpgradeDeps(container);
+                registerUpgradeDeps(container, createMockPackageJsonFile());
                 mod.default.register(container);
                 const upgrade = container.resolve(Upgrade);
                 expect(typeof upgrade.canHandle).toBe("function");
@@ -49,7 +50,7 @@ describe("upgrades registry", () => {
                 const indexPath = path.join(upgradesDir, dir.name, "index.ts");
                 const mod = await import(pathToFileURL(indexPath).href);
                 const container = new Container();
-                registerUpgradeDeps(container);
+                registerUpgradeDeps(container, createMockPackageJsonFile());
                 mod.default.register(container);
                 const upgrade = container.resolve(Upgrade);
                 expect(upgrade.version).toEqual(Version.create(dir.name));
