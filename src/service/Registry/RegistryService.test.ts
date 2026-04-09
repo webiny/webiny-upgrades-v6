@@ -103,11 +103,22 @@ describe("RegistryService", () => {
             expect(result?.format()).toBe("6.0.0");
         });
 
-        it("accepts a SemVer object as version", async () => {
+        it("accepts a Version object as version", async () => {
+            const { Version } = await import("../../base/Version/index.js");
             mockFetch({ "dist-tags": {}, versions: { "6.0.0": {} } });
             const service = createContainer().resolve(RegistryService);
-            const result = await service.getVersion("@webiny/cli", "6.0.0");
+            const result = await service.getVersion("@webiny/cli", Version.create("6.0.0"));
             expect(result?.format()).toBe("6.0.0");
+        });
+
+        it("returns null and logs warning when version string is not valid semver", async () => {
+            mockFetch({ "dist-tags": {}, versions: { "not-semver": {} } });
+            const container = createContainer();
+            const logger = container.resolve(Logger);
+            const service = container.resolve(RegistryService);
+            const result = await service.getVersion("@webiny/cli", "not-semver");
+            expect(result).toBeNull();
+            expect(logger.warn).toHaveBeenCalled();
         });
 
         it("returns null when the version does not exist in registry", async () => {
