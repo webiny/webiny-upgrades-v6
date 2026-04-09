@@ -3,7 +3,6 @@ import { PinoLogger } from "./PinoLogger.js";
 
 const captureStdout = (): { lines: string[]; restore: () => void } => {
     const lines: string[] = [];
-    const original = process.stdout.write.bind(process.stdout);
     const spy = vi.spyOn(process.stdout, "write").mockImplementation((chunk: any) => {
         const str = chunk.toString();
         if (str.trim()) {

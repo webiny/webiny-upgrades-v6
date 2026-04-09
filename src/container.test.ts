@@ -190,8 +190,6 @@ describe("createContainer", () => {
 
         await createContainer(createParams());
 
-        expect(loadJsonFileSync).toHaveBeenCalledWith(
-            "/project/node_modules/webiny/package.json"
-        );
+        expect(loadJsonFileSync).toHaveBeenCalledWith("/project/node_modules/webiny/package.json");
     });
 });

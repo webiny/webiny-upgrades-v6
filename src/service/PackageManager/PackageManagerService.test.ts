@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { Container } from "@webiny/di";
 import { PackageManagerService } from "./PackageManagerService.js";
-import { PackageManagerService as PackageManagerServiceToken, PackageManager } from "./abstraction.js";
+import {
+    PackageManagerService as PackageManagerServiceToken,
+    PackageManager
+} from "./abstraction.js";
 import { Timer } from "../../base/Timer/abstraction.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { Version } from "../../base/Version/index.js";
