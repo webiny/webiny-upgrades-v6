@@ -1,4 +1,3 @@
-import path from "node:path";
 import { Version } from "./base/Version/index.js";
 import { Container } from "@webiny/di";
 import { Logger, LoggerFeature } from "./base/Logger/index.js";
@@ -30,9 +29,16 @@ interface ICreateContainerParams {
     packageManager?: "yarn" | "pnpm" | "npm";
     skipDependencyGuard: boolean;
     dryRun: boolean;
+    joinPath: (...segments: string[]) => string;
 }
 
-const resolveTargetVersion = async (container: Container, version: string): Promise<Version> => {
+interface IResolveTargetVersionParams {
+    container: Container;
+    version: string;
+}
+
+const resolveTargetVersion = async (params: IResolveTargetVersionParams): Promise<Version> => {
+    const { container, version } = params;
     const npm = container.resolve(RegistryService);
     if (!version || version === "latest") {
         const result = await npm.getLatestVersion("webiny");
@@ -48,9 +54,16 @@ const resolveTargetVersion = async (container: Container, version: string): Prom
     return result;
 };
 
-const loadInstalledVersion = (container: Container, cwd: string): Version => {
+interface ILoadInstalledVersionParams {
+    container: Container;
+    cwd: string;
+    joinPath: (...segments: string[]) => string;
+}
+
+const loadInstalledVersion = (params: ILoadInstalledVersionParams): Version => {
+    const { container, cwd, joinPath } = params;
     const packageJsonService = container.resolve(PackageJsonService);
-    const packageJsonPath = path.join(cwd, "node_modules", "webiny", "package.json");
+    const packageJsonPath = joinPath(cwd, "node_modules", "webiny", "package.json");
     const packageJson = packageJsonService.load(packageJsonPath);
     if (!packageJson) {
         throw new Error(`Failed to load ${packageJsonPath}.`);
@@ -102,10 +115,17 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     let installedVersion: Version | null = null;
     try {
         logger.debug("Resolving target version...");
-        targetVersion = await resolveTargetVersion(container, params.version);
+        targetVersion = await resolveTargetVersion({
+            container,
+            version: params.version
+        });
         logger.debug(`Target version resolved: ${targetVersion.raw}`);
         logger.debug("Loading installed version...");
-        installedVersion = loadInstalledVersion(container, params.cwd);
+        installedVersion = loadInstalledVersion({
+            container,
+            cwd: params.cwd,
+            joinPath: params.joinPath
+        });
         logger.debug(`Installed version loaded: ${installedVersion.raw}`);
     } catch (ex) {
         responder.error(ex.message, 0);
