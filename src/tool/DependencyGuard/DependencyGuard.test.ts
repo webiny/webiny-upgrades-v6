@@ -212,6 +212,17 @@ describe("DependencyGuard", () => {
             expect(guard.execute()).toEqual([]);
         });
 
+        it("skips packages in the SKIP_PACKAGES list even when versions differ", () => {
+            const guard = createContainer({
+                packageJsonData: { dependencies: { eslint: "8.0.0", prettier: "2.0.0" } },
+                references: makeReferences({
+                    dependencies: { eslint: "9.0.0", prettier: "3.0.0" }
+                })
+            }).resolve(DependencyGuard);
+
+            expect(guard.execute()).toEqual([]);
+        });
+
         it("throws when package.json cannot be loaded", () => {
             const guard = createContainer({ packageJsonFile: null }).resolve(DependencyGuard);
             expect(() => guard.execute()).toThrow("Failed to load package.json");

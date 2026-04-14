@@ -9,6 +9,8 @@ import { Container } from "../../base/Container/index.js";
 import { Context } from "../../base/Context/index.js";
 import { isFeature } from "../../utils/createFeature.js";
 
+const EXCLUDED_DIRS = new Set(["__tests__"]);
+
 interface IRunner {
     default?: unknown;
 }
@@ -30,7 +32,12 @@ class UpgradeRunnerImpl implements UpgradeRunnerAbstraction.Interface {
         const directories = fs
             .readdirSync(this.upgradesDir, { withFileTypes: true })
             .filter(entry => {
-                return entry.isDirectory();
+                if (entry.isDirectory() === false) {
+                    return false;
+                } else if (EXCLUDED_DIRS.has(entry.name)) {
+                    return false;
+                }
+                return true;
             });
 
         if (directories.length === 0) {

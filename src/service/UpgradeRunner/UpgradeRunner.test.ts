@@ -81,6 +81,18 @@ describe("UpgradeRunner", () => {
             );
         });
 
+        it("throws when upgrades directory has no subdirectories", async () => {
+            const { container } = createIntegrationContainer({
+                upgradesDir: path.join(invalidDir, "empty-dir"),
+                currentVersion: "5.9.0",
+                targetVersion: "6.1.0"
+            });
+
+            await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
+                "No upgrade scripts found"
+            );
+        });
+
         it("throws when a directory name is not valid semver", async () => {
             const { container } = createIntegrationContainer({
                 upgradesDir: path.join(invalidDir, "invalid-dir-name"),

@@ -66,10 +66,36 @@ describe("YarnPackageManager", () => {
         expect(execa).toHaveBeenCalledWith("yarn", [], { stdio: "pipe" });
     });
 
+    it("install logs stderr and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ stderr: "yarn error output" });
+        const container = createContainer(YarnPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.install()).rejects.toEqual({ stderr: "yarn error output" });
+        expect(logger.error).toHaveBeenCalledWith("yarn error output");
+    });
+
+    it("install logs message when stderr is empty", async () => {
+        (execa as any).mockRejectedValue({ message: "command failed" });
+        const container = createContainer(YarnPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.install()).rejects.toEqual({ message: "command failed" });
+        expect(logger.error).toHaveBeenCalledWith("command failed");
+    });
+
     it("version runs yarn --version and parses result", async () => {
         (execa as any).mockResolvedValue({ stdout: "4.1.0" });
         const result = await createContainer(YarnPackageManager).resolve(PackageManager).version();
         expect(result.format()).toBe("4.1.0");
+    });
+
+    it("version throws when output is not valid semver", async () => {
+        (execa as any).mockResolvedValue({ stdout: "not-a-version" });
+        const pm = createContainer(YarnPackageManager).resolve(PackageManager);
+        await expect(pm.version()).rejects.toThrow("Failed to parse yarn version");
     });
 });
 
@@ -82,10 +108,26 @@ describe("PnpmPackageManager", () => {
         expect(execa).toHaveBeenCalledWith("pnpm", ["install"], { stdio: "pipe" });
     });
 
+    it("install logs stderr and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ stderr: "pnpm error" });
+        const container = createContainer(PnpmPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.install()).rejects.toEqual({ stderr: "pnpm error" });
+        expect(logger.error).toHaveBeenCalledWith("pnpm error");
+    });
+
     it("version runs pnpm --version and parses result", async () => {
         (execa as any).mockResolvedValue({ stdout: "9.0.0" });
         const result = await createContainer(PnpmPackageManager).resolve(PackageManager).version();
         expect(result.format()).toBe("9.0.0");
+    });
+
+    it("version throws when output is not valid semver", async () => {
+        (execa as any).mockResolvedValue({ stdout: "bad" });
+        const pm = createContainer(PnpmPackageManager).resolve(PackageManager);
+        await expect(pm.version()).rejects.toThrow("Failed to parse pnpm version");
     });
 });
 
@@ -98,9 +140,25 @@ describe("NpmPackageManager", () => {
         expect(execa).toHaveBeenCalledWith("npm", ["install"], { stdio: "pipe" });
     });
 
+    it("install logs stderr and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ stderr: "npm error" });
+        const container = createContainer(NpmPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.install()).rejects.toEqual({ stderr: "npm error" });
+        expect(logger.error).toHaveBeenCalledWith("npm error");
+    });
+
     it("version runs npm --version and parses result", async () => {
         (execa as any).mockResolvedValue({ stdout: "10.2.0" });
         const result = await createContainer(NpmPackageManager).resolve(PackageManager).version();
         expect(result.format()).toBe("10.2.0");
+    });
+
+    it("version throws when output is not valid semver", async () => {
+        (execa as any).mockResolvedValue({ stdout: "bad" });
+        const pm = createContainer(NpmPackageManager).resolve(PackageManager);
+        await expect(pm.version()).rejects.toThrow("Failed to parse npm version");
     });
 });

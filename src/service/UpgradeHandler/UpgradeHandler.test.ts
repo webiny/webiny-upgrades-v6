@@ -220,6 +220,21 @@ describe("UpgradeHandler", () => {
         });
     });
 
+    describe("dry run", () => {
+        it("does not execute upgrades when dryRun is true", async () => {
+            const upgrade = createMockUpgrade("6.1.0");
+            const ctx = createMockContext("6.0.0", "6.1.0");
+            const container = createContainer([upgrade], ctx);
+            const input = container.resolve(Input);
+            (input as any).dryRun = true;
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.1.0") });
+
+            expect(upgrade.execute).not.toHaveBeenCalled();
+        });
+    });
+
     describe("execution", () => {
         it("executes all upgrades in pool in order", async () => {
             const order: string[] = [];
@@ -312,6 +327,34 @@ describe("UpgradeHandler", () => {
             await handler.handle({ version: v("6.1.0") });
 
             expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.1.0") });
+        });
+
+        it("uses installVersion for upWebiny when set", async () => {
+            const upgrade = createMockUpgrade("6.2.0");
+            const ctx = createMockContext("6.1.0", "6.2.0");
+            const container = createContainer([upgrade], ctx);
+            const input = container.resolve(Input);
+            (input as any).installVersion = "0.0.0-unstable.abcde";
+            const upWebiny = container.resolve(UpWebiny);
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.2.0") });
+
+            expect(upWebiny.execute).toHaveBeenCalledWith({
+                version: v("0.0.0-unstable.abcde")
+            });
+        });
+
+        it("uses target version for upWebiny when installVersion is not set", async () => {
+            const upgrade = createMockUpgrade("6.2.0");
+            const ctx = createMockContext("6.1.0", "6.2.0");
+            const container = createContainer([upgrade], ctx);
+            const upWebiny = container.resolve(UpWebiny);
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.2.0") });
+
+            expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.2.0") });
         });
     });
 });

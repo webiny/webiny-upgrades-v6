@@ -10,6 +10,7 @@ interface IInput {
     packageManager?: "yarn" | "pnpm" | "npm";
     skipDependencyGuard: boolean;
     dryRun: boolean;
+    installVersion?: string;
 }
 
 export const Input = createAbstraction<IInput>("Base/Input");

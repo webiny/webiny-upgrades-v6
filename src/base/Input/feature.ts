@@ -11,6 +11,7 @@ interface IInputParams {
     packageManager?: "yarn" | "pnpm" | "npm";
     skipDependencyGuard: boolean;
     dryRun: boolean;
+    installVersion?: string;
 }
 
 export const InputFeature = createFeature<IInputParams>({
@@ -28,7 +29,8 @@ export const InputFeature = createFeature<IInputParams>({
             forceUpgrade: params.forceUpgrade,
             packageManager: params.packageManager,
             skipDependencyGuard: params.skipDependencyGuard,
-            dryRun: params.dryRun
+            dryRun: params.dryRun,
+            installVersion: params.installVersion
         });
     }
 });

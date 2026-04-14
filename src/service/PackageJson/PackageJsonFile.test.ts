@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { Version } from "../../../src/base/Version/index.js";
-import { PackageJsonFile } from "../../../src/service/PackageJson/PackageJsonFile.js";
-import type { PackageJsonFile as PackageJsonFileAbstraction } from "../../../src/service/PackageJson/abstraction.js";
+import { Version } from "../../base/Version/index.js";
+import { PackageJsonFile } from "./PackageJsonFile.js";
+import type { PackageJsonFile as PackageJsonFileAbstraction } from "./abstraction.js";
 
 const createFile = (raw: Partial<PackageJsonFileAbstraction.Data> = {}): PackageJsonFile => {
     return new PackageJsonFile({
@@ -51,6 +51,18 @@ describe("PackageJsonFile", () => {
             const file = createFile();
             expect(() => file.removeDependency("lodash")).not.toThrow();
         });
+
+        it("setDependencyIfExists updates an existing dependency", () => {
+            const file = createFile({ dependencies: { lodash: "4.17.0" } });
+            file.setDependencyIfExists("lodash", "4.17.21");
+            expect(file.getDependency("lodash")).toBe("4.17.21");
+        });
+
+        it("setDependencyIfExists does nothing when dependency is missing", () => {
+            const file = createFile();
+            file.setDependencyIfExists("lodash", "4.17.21");
+            expect(file.getDependency("lodash")).toBeNull();
+        });
     });
 
     describe("devDependencies", () => {
@@ -87,6 +99,18 @@ describe("PackageJsonFile", () => {
             const file = createFile();
             expect(() => file.removeDevDependency("vitest")).not.toThrow();
         });
+
+        it("setDevDependencyIfExists updates an existing devDependency", () => {
+            const file = createFile({ devDependencies: { vitest: "3.0.0" } });
+            file.setDevDependencyIfExists("vitest", "4.0.0");
+            expect(file.getDevDependency("vitest")).toBe("4.0.0");
+        });
+
+        it("setDevDependencyIfExists does nothing when devDependency is missing", () => {
+            const file = createFile();
+            file.setDevDependencyIfExists("vitest", "4.0.0");
+            expect(file.getDevDependency("vitest")).toBeNull();
+        });
     });
 
     describe("peerDependencies", () => {
@@ -118,6 +142,23 @@ describe("PackageJsonFile", () => {
             const file = createFile();
             expect(() => file.removePeerDependency("react")).not.toThrow();
         });
+
+        it("returns null for a missing peerDependency", () => {
+            const file = createFile();
+            expect(file.getPeerDependency("react")).toBeNull();
+        });
+
+        it("setPeerDependencyIfExists updates an existing peerDependency", () => {
+            const file = createFile({ peerDependencies: { react: "17.0.0" } });
+            file.setPeerDependencyIfExists("react", "18.0.0");
+            expect(file.getPeerDependency("react")).toBe("18.0.0");
+        });
+
+        it("setPeerDependencyIfExists does nothing when peerDependency is missing", () => {
+            const file = createFile();
+            file.setPeerDependencyIfExists("react", "18.0.0");
+            expect(file.getPeerDependency("react")).toBeNull();
+        });
     });
 
     describe("resolutions", () => {
@@ -148,6 +189,23 @@ describe("PackageJsonFile", () => {
         it("does not throw when removing a missing resolution", () => {
             const file = createFile();
             expect(() => file.removeResolution("lodash")).not.toThrow();
+        });
+
+        it("returns null for a missing resolution", () => {
+            const file = createFile();
+            expect(file.getResolution("lodash")).toBeNull();
+        });
+
+        it("setResolutionIfExists updates an existing resolution", () => {
+            const file = createFile({ resolutions: { lodash: "4.17.0" } });
+            file.setResolutionIfExists("lodash", "4.17.21");
+            expect(file.getResolution("lodash")).toBe("4.17.21");
+        });
+
+        it("setResolutionIfExists does nothing when resolution is missing", () => {
+            const file = createFile();
+            file.setResolutionIfExists("lodash", "4.17.21");
+            expect(file.getResolution("lodash")).toBeNull();
         });
     });
 

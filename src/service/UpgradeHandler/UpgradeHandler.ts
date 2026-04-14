@@ -7,6 +7,7 @@ import { PackageManagerService } from "../PackageManager/index.js";
 import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { Input } from "../../base/Input/index.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/index.js";
+import { Version } from "../../base/Version/index.js";
 
 class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
     public constructor(
@@ -86,7 +87,10 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
             throw error;
         }
 
-        await this.upWebiny.execute({ version: params.version });
+        const installVersion = this.input.installVersion
+            ? Version.create(this.input.installVersion)
+            : params.version;
+        await this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
     }
 }
