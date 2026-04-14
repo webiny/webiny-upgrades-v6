@@ -116,10 +116,28 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     let installedVersion: Version | null = null;
     try {
         logger.debug("Resolving target version...");
-        targetVersion = await resolveTargetVersion({
+        /**
+         * Validate the version that will be installed against the registry.
+         * When --install-version is set, that is validated; otherwise the positional version.
+         */
+        const resolved = await resolveTargetVersion({
             container,
-            version: params.version
+            version: params.installVersion || params.version
         });
+        /**
+         * targetVersion drives canHandle pool building.
+         * When --install-version is set, the positional arg is used (may not exist in registry).
+         * Otherwise, use whatever the registry resolved (handles "latest" → actual version).
+         */
+        if (params.installVersion) {
+            const parsed = Version.parse(params.version);
+            if (!parsed) {
+                throw new Error(`Invalid version: "${params.version}".`);
+            }
+            targetVersion = parsed;
+        } else {
+            targetVersion = resolved;
+        }
         logger.debug(`Target version resolved: ${targetVersion.raw}`);
         logger.debug("Loading installed version...");
         installedVersion = loadInstalledVersion({

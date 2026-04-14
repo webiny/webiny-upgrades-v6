@@ -220,6 +220,21 @@ describe("UpgradeHandler", () => {
         });
     });
 
+    describe("dry run", () => {
+        it("does not execute upgrades when dryRun is true", async () => {
+            const upgrade = createMockUpgrade("6.1.0");
+            const ctx = createMockContext("6.0.0", "6.1.0");
+            const container = createContainer([upgrade], ctx);
+            const input = container.resolve(Input);
+            (input as any).dryRun = true;
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.1.0") });
+
+            expect(upgrade.execute).not.toHaveBeenCalled();
+        });
+    });
+
     describe("execution", () => {
         it("executes all upgrades in pool in order", async () => {
             const order: string[] = [];

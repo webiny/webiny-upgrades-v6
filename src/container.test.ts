@@ -192,4 +192,27 @@ describe("createContainer", () => {
 
         expect(loadJsonFileSync).toHaveBeenCalledWith("/project/node_modules/webiny/package.json");
     });
+
+    it("uses installVersion for registry validation and positional version for targetVersion", async () => {
+        mockRegistry({ "0.0.0-unstable.abcde": {} }, "6.1.0");
+        mockFs("6.0.0");
+
+        const container = await createContainer(
+            createParams({ version: "6.2.0", installVersion: "0.0.0-unstable.abcde" })
+        );
+        const ctx = container.resolve(Context);
+
+        expect(ctx.targetVersion.format()).toBe("6.2.0");
+    });
+
+    it("exits when installVersion is set but positional version is not valid semver", async () => {
+        mockRegistry({ "0.0.0-unstable.abcde": {} }, "6.1.0");
+        mockFs("6.0.0");
+
+        await expect(
+            createContainer(
+                createParams({ version: "not-semver", installVersion: "0.0.0-unstable.abcde" })
+            )
+        ).rejects.toThrow("process.exit called");
+    });
 });

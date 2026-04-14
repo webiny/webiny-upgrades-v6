@@ -88,6 +88,25 @@ describe("UpWebiny", () => {
             expect(file.getResolution("@webiny/cli")).toBe("6.1.0");
         });
 
+        it("moves @webiny/cognito from devDependencies to dependencies", async () => {
+            const file = createMockPackageJsonFile({
+                devDependencies: { "@webiny/cognito": "6.0.0" }
+            });
+            const tool = createContainer(file).resolve(UpWebiny);
+            await tool.execute({ version: v("6.1.0") });
+            expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
+            expect(file.getDevDependency("@webiny/cognito")).toBeNull();
+        });
+
+        it("updates @webiny/cognito in dependencies when already present", async () => {
+            const file = createMockPackageJsonFile({
+                dependencies: { "@webiny/cognito": "6.0.0" }
+            });
+            const tool = createContainer(file).resolve(UpWebiny);
+            await tool.execute({ version: v("6.1.0") });
+            expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
+        });
+
         it("saves package.json after updating dependencies", async () => {
             const file = createMockPackageJsonFile();
             const container = createContainer(file);
