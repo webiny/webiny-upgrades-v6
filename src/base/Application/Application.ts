@@ -33,14 +33,9 @@ class ApplicationImpl implements ApplicationAbstraction.Interface {
             return;
         }
         try {
-            this.runDependencyGuard(
-                "Running dependency guard before starting the upgrade process..."
-            );
             await this.runner.run();
             const duration = (Date.now() - start) / 1000;
-            this.runDependencyGuard(
-                "Running dependency guard after completing the upgrade process..."
-            );
+            this.runDependencyGuard("Running dependency guard...");
             this.responder.success(duration);
         } catch (ex) {
             const duration = (Date.now() - start) / 1000;
