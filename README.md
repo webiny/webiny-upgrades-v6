@@ -30,6 +30,7 @@ npx https://github.com/webiny/webiny-upgrades-v6 6.1.0 --cwd /path/to/my-webiny-
 | `--package-manager` | string | auto-detect | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted) |
 | `--dry-run` | boolean | `false` | Resolve upgrades and build the pool but do not execute them |
 | `--skip-dependency-guard` | boolean | `true` | Skip the dependency guard mismatch check |
+| `--install-version` | string | — | Override the npm version written to package.json for `@webiny/*` packages. Use when the upgrade script version differs from the published package version (e.g. `--install-version 0.0.0-unstable.abcde`) |
 
 ## Output
 

@@ -5,7 +5,7 @@ CLI tool that automates upgrading a Webiny project to a target version. It updat
 ## Running
 
 ```bash
-npx https://github.com/webiny/webiny-upgrades-v6 <version> [--cwd <path>] [--registry <url>] [--debug] [--force] [--dry-run] [--skip-dependency-guard]
+npx https://github.com/webiny/webiny-upgrades-v6 <version> [--cwd <path>] [--registry <url>] [--debug] [--force] [--dry-run] [--skip-dependency-guard] [--install-version <version>]
 ```
 
 Entry point: `index.js` → registers tsx loader → `src/index.ts`.
@@ -66,7 +66,7 @@ Application.execute()
             ├─ calls execute() on each in semver order
             ├─ records each step in upgrade history (package.json webiny.history)
             ├─ on failure: git.restore() + rethrow
-            ├─ on success: upWebiny.execute(targetVersion) to pin final versions
+            ├─ on success: upWebiny.execute(installVersion or targetVersion) to pin final versions
             └─ packageManager.install() (changes left unstaged — no commit)
 ```
 
