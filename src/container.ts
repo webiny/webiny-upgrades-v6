@@ -29,6 +29,7 @@ interface ICreateContainerParams {
     packageManager?: "yarn" | "pnpm" | "npm";
     skipDependencyGuard: boolean;
     dryRun: boolean;
+    installVersion?: string;
     joinPath: (...segments: string[]) => string;
 }
 

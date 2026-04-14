@@ -23,7 +23,8 @@ const schema = zod
         registry: zod.url(),
         "package-manager": zod.enum(["yarn", "pnpm", "npm"]).optional(),
         "skip-dependency-guard": zod.boolean().default(true),
-        "dry-run": zod.boolean().default(false)
+        "dry-run": zod.boolean().default(false),
+        "install-version": zod.string().optional()
     })
     .transform(
         ({
@@ -35,7 +36,8 @@ const schema = zod
             cwd,
             "package-manager": packageManager,
             "skip-dependency-guard": skipDependencyGuard,
-            "dry-run": dryRun
+            "dry-run": dryRun,
+            "install-version": installVersion
         }) => ({
             version: _,
             cwd,
@@ -45,7 +47,8 @@ const schema = zod
             registry,
             packageManager,
             skipDependencyGuard,
-            dryRun
+            dryRun,
+            installVersion
         })
     );
 
@@ -65,6 +68,7 @@ interface IGetUserInputResult {
     packageManager?: PackageManagerOption;
     skipDependencyGuard: boolean;
     dryRun: boolean;
+    installVersion?: string;
 }
 
 export const getUserInput = (params: IGetUserInputParams): IGetUserInputResult => {
@@ -114,6 +118,11 @@ export const getUserInput = (params: IGetUserInputParams): IGetUserInputResult =
             type: "boolean",
             default: false,
             describe: "Do everything except actually performing the upgrade (for testing purposes)"
+        })
+        .option("install-version", {
+            type: "string",
+            describe:
+                "Override the npm version written to package.json for @webiny/* packages. Use when the upgrade script version (e.g. 6.2.0) differs from the published package version (e.g. 0.0.0-unstable.abcde)"
         })
         .parseSync();
 
