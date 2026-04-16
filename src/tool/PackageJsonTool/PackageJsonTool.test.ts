@@ -75,6 +75,51 @@ describe("PackageJsonTool", () => {
         });
     });
 
+    describe("loadOrThrow", () => {
+        it("resolves path via context when no target is provided", () => {
+            const container = createContainer("/project/package.json");
+            const context = container.resolve(Context);
+            const service = container.resolve(PackageJsonService);
+            (service.loadOrThrow as any).mockReturnValue(createMockPackageJsonFile());
+            const tool = container.resolve(PackageJsonTool);
+
+            tool.loadOrThrow();
+
+            expect(context.resolve).toHaveBeenCalledWith("package.json");
+        });
+
+        it("returns the file from the service", () => {
+            const file = createMockPackageJsonFile();
+            const container = createContainer();
+            const service = container.resolve(PackageJsonService);
+            (service.loadOrThrow as any).mockReturnValue(file);
+            const tool = container.resolve(PackageJsonTool);
+
+            expect(tool.loadOrThrow()).toBe(file);
+        });
+
+        it("throws when the service throws", () => {
+            const container = createContainer();
+            const tool = container.resolve(PackageJsonTool);
+
+            expect(() => tool.loadOrThrow()).toThrow("Failed to load package.json");
+        });
+
+        it("passes the provided target path directly to the service", () => {
+            const file = createMockPackageJsonFile();
+            const container = createContainer();
+            const context = container.resolve(Context);
+            const service = container.resolve(PackageJsonService);
+            (service.loadOrThrow as any).mockReturnValue(file);
+            const tool = container.resolve(PackageJsonTool);
+
+            tool.loadOrThrow("/other/package.json");
+
+            expect(context.resolve).not.toHaveBeenCalled();
+            expect(service.loadOrThrow).toHaveBeenCalledWith("/other/package.json");
+        });
+    });
+
     describe("save", () => {
         it("delegates to the service", () => {
             const file = createMockPackageJsonFile();

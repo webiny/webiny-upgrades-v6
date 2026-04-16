@@ -66,6 +66,32 @@ describe("PackageJsonService", () => {
         });
     });
 
+    describe("loadOrThrow", () => {
+        it("returns a PackageJsonFile when the file exists", () => {
+            const raw = { name: "my-app", version: "1.0.0" };
+            (loadJsonFileSync as any).mockReturnValue(raw);
+
+            const service = createContainer().resolve(PackageJsonService);
+            const file = service.loadOrThrow("/project/package.json");
+
+            expect(file).not.toBeNull();
+            expect(file.path).toBe("/project/package.json");
+            expect(file.raw).toBe(raw);
+        });
+
+        it("throws when the file cannot be loaded", () => {
+            (loadJsonFileSync as any).mockImplementation(() => {
+                throw new Error("ENOENT: file not found");
+            });
+
+            const service = createContainer().resolve(PackageJsonService);
+
+            expect(() => service.loadOrThrow("/missing/package.json")).toThrow(
+                "Failed to load /missing/package.json"
+            );
+        });
+    });
+
     describe("save", () => {
         it("writes the file's raw content to its path", () => {
             (loadJsonFileSync as any).mockReturnValue({});
