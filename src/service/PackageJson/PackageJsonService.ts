@@ -24,6 +24,14 @@ class PackageJsonServiceImpl implements PackageJsonServiceAbstraction.Interface 
         }
     }
 
+    public loadOrThrow(target: string): PackageJsonServiceAbstraction.File {
+        const file = this.load(target);
+        if (!file) {
+            throw new Error(`Failed to load ${target}`);
+        }
+        return file;
+    }
+
     public save(target: PackageJsonServiceAbstraction.File): void {
         return writeJsonFileSync(target.path, target.raw);
     }

@@ -15,6 +15,13 @@ class PackageJsonToolImpl implements PackageJsonToolAbstraction.Interface {
         return this.packageJsonService.load(target);
     }
 
+    public loadOrThrow(target?: string): PackageJsonToolAbstraction.File {
+        if (!target) {
+            target = this.context.resolve("package.json");
+        }
+        return this.packageJsonService.loadOrThrow(target);
+    }
+
     public save(target: PackageJsonToolAbstraction.File): void {
         return this.packageJsonService.save(target);
     }

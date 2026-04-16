@@ -16,6 +16,12 @@ export const registerUpgradeDeps = (
     container.registerInstance(UpWebiny, { execute: vi.fn() });
     container.registerInstance(PackageJsonTool, {
         load: vi.fn().mockReturnValue(file),
+        loadOrThrow: vi.fn().mockImplementation(() => {
+            if (!file) {
+                throw new Error("Failed to load package.json");
+            }
+            return file;
+        }),
         save: vi.fn()
     });
     container.registerInstance(ReferencesService, {

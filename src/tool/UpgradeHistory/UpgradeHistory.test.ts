@@ -15,6 +15,7 @@ const createContainer = (webinyField?: unknown) => {
     }
     const packageJsonTool: PackageJsonTool.Interface = {
         load: vi.fn().mockReturnValue(file),
+        loadOrThrow: vi.fn().mockReturnValue(file),
         save: vi.fn()
     };
     const container = new Container();
@@ -151,6 +152,9 @@ describe("UpgradeHistory", () => {
             const container = new Container();
             container.registerInstance(PackageJsonTool, {
                 load: vi.fn().mockReturnValue(null),
+                loadOrThrow: vi.fn().mockImplementation(() => {
+                    throw new Error("Failed to load package.json");
+                }),
                 save: vi.fn()
             });
             container.register(UpgradeHistoryImpl);

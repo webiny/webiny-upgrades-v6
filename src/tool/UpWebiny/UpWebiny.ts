@@ -11,10 +11,7 @@ class UpWebinyImpl implements UpWebinyAbstraction.Interface {
     public async execute(params: UpWebinyAbstraction.Params): Promise<void> {
         const { version } = params;
 
-        const packageJson = this.packageJsonTool.load();
-        if (!packageJson) {
-            throw new Error(`Failed to load root package.json.`);
-        }
+        const packageJson = this.packageJsonTool.loadOrThrow();
         /**
          * We want to make sure that all @webiny/* dependencies are updated to the same version,
          * and that they are all in "dependencies" (not dev or peer).

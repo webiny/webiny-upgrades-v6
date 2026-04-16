@@ -6,6 +6,7 @@ interface IPackageJsonTool {
      * If target is not provided, it will try to load "package.json" from the current working directory.
      */
     load(target?: string): PackageJsonServiceAbstraction.File | null;
+    loadOrThrow(target?: string): PackageJsonServiceAbstraction.File;
     save(target: PackageJsonServiceAbstraction.File): void;
 }
 

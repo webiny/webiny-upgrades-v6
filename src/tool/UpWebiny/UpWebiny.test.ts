@@ -13,6 +13,12 @@ const createContainer = (file: PackageJsonFile.Interface | null = createMockPack
     const container = new Container();
     container.registerInstance(PackageJsonTool, {
         load: vi.fn().mockReturnValue(file),
+        loadOrThrow: vi.fn().mockImplementation(() => {
+            if (!file) {
+                throw new Error("Failed to load package.json");
+            }
+            return file;
+        }),
         save: vi.fn()
     });
     container.register(UpWebinyImpl);
@@ -24,7 +30,7 @@ describe("UpWebiny", () => {
         it("throws when package.json cannot be loaded", async () => {
             const tool = createContainer(null).resolve(UpWebiny);
             await expect(tool.execute({ version: v("6.1.0") })).rejects.toThrow(
-                "Failed to load root package.json."
+                "Failed to load package.json"
             );
         });
 

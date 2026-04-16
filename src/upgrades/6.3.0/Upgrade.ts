@@ -4,7 +4,7 @@ import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
-    public readonly version = Version.create("6.2.0");
+    public readonly version = Version.create("6.3.0");
 
     public constructor(
         private readonly upWebiny: UpWebiny.Interface,
@@ -21,12 +21,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     public async execute(): Promise<void> {
         await this.upWebiny.execute({ version: this.version });
         const packageJson = this.packageJsonTool.loadOrThrow();
-        packageJson.setDependency("react", "18.3.1");
-        packageJson.setDependency("react-dom", "18.3.1");
-
-        packageJson.setDevDependency("@types/node", "24.12.2");
-        packageJson.setDevDependency("@types/react", "18.3.28");
-        packageJson.setDevDependency("@types/react-dom", "18.3.7");
+        packageJson.setDevDependency("typescript", "6.0.2");
 
         this.packageJsonTool.save(packageJson);
     }

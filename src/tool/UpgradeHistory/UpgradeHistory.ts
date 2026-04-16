@@ -6,7 +6,7 @@ class UpgradeHistoryImpl implements UpgradeHistoryAbstraction.Interface {
     public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
 
     public add(version: Version): void {
-        const file = this.loadOrThrow();
+        const file = this.packageJsonTool.loadOrThrow();
         const history = this.readHistory(file);
         history.push({
             version: version.raw,
@@ -17,7 +17,7 @@ class UpgradeHistoryImpl implements UpgradeHistoryAbstraction.Interface {
     }
 
     public remove(version: Version): void {
-        const file = this.loadOrThrow();
+        const file = this.packageJsonTool.loadOrThrow();
         const history = this.readHistory(file);
         const filtered = history.filter(entry => entry.version !== version.raw);
         file.set("webiny", { ...this.readWebinyField(file), history: filtered });
@@ -25,22 +25,14 @@ class UpgradeHistoryImpl implements UpgradeHistoryAbstraction.Interface {
     }
 
     public get(version: Version): UpgradeHistoryAbstraction.Entry | null {
-        const file = this.loadOrThrow();
+        const file = this.packageJsonTool.loadOrThrow();
         const history = this.readHistory(file);
         return history.find(entry => entry.version === version.raw) ?? null;
     }
 
     public list(): UpgradeHistoryAbstraction.Entry[] {
-        const file = this.loadOrThrow();
+        const file = this.packageJsonTool.loadOrThrow();
         return this.readHistory(file);
-    }
-
-    private loadOrThrow(): PackageJsonTool.File {
-        const file = this.packageJsonTool.load();
-        if (!file) {
-            throw new Error("Failed to load package.json");
-        }
-        return file;
     }
 
     private readWebinyField(file: PackageJsonTool.File): Record<string, unknown> {

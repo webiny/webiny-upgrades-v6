@@ -14,6 +14,9 @@ const createContainer = (resolvedPath = "/project/package.json") => {
     } as unknown as Context.Interface);
     container.registerInstance(PackageJsonService, {
         load: vi.fn().mockReturnValue(null),
+        loadOrThrow: vi.fn().mockImplementation(() => {
+            throw new Error("Failed to load package.json");
+        }),
         save: vi.fn()
     });
     container.register(PackageJsonToolImpl);
