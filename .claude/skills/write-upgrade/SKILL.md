@@ -21,32 +21,46 @@ Use relative imports throughout — `~/` aliases are not reliable here.
 
 Implement `Upgrade.Interface` — a `version` property and two methods: `canHandle` and `execute`.
 
-`canHandle` returns `true` when this upgrade's version falls within the requested range: greater than `currentVersion` (not already applied) and less than or equal to `targetVersion` (within scope). The handler also checks upgrade history and skips already-executed upgrades. Do not use registry checks — the version does not exist on npm yet when the upgrade is being written.
+`canHandle` returns `true` when this upgrade's version falls within the range `(currentVersion, targetVersion]` — strictly greater than `currentVersion` and less than or equal to `targetVersion`.
+
+- **`currentVersion`** is the user's installed Webiny version. It acts as a lower bound so that upgrades at or below the user's current version are skipped. The handler advances `currentVersion` after each successful upgrade step, so when running `6.1.0 → 6.3.0`, the 6.2.0 upgrade sees `currentVersion=6.1.0` and the 6.3.0 upgrade sees `currentVersion=6.2.0`.
+- **`targetVersion`** is the version the user wants to reach. It caps the upper bound so only relevant upgrades run.
+
+Both bounds are required — without `currentVersion`, older upgrades would re-run on every invocation. The handler also checks upgrade history and skips already-executed upgrades as a second layer of protection. Do not use registry checks — the version does not exist on npm yet when the upgrade is being written.
 
 ```ts
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
+import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.2.0");
 
-    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
+    public constructor(
+        private readonly upWebiny: UpWebiny.Interface,
+        private readonly packageJsonTool: PackageJsonTool.Interface
+    ) {}
 
     public async canHandle({ targetVersion, currentVersion }: UpgradeAbstraction.Params): Promise<boolean> {
         return this.version.between(currentVersion, targetVersion);
     }
 
     public async execute(): Promise<void> {
-        // Version-specific transformations only.
-        // Do NOT call upWebiny.execute() — the handler pins all @webiny/*
-        // packages to the target version after all upgrade steps complete.
+        // IMPORTANT: always pass this.version — never a hardcoded version string.
+        // The user may run the upgrade with a pre-release like 6.2.0-beta.0,
+        // and this.version resolves to the correct value.
+        await this.upWebiny.execute({ version: this.version });
+
+        const packageJson = this.packageJsonTool.loadOrThrow();
+        // Version-specific transformations go here.
+        this.packageJsonTool.save(packageJson);
     }
 }
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool]
+    dependencies: [UpWebiny, PackageJsonTool]
 });
 ```
 
@@ -72,9 +86,9 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 |---|---|---|
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
-| `UpWebiny` | `../../tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — **called by the handler, not by upgrade scripts** |
-| `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null` — loads `package.json` from cwd or given path. `save(file): void` — writes back to disk. See **PackageJsonFile API** below. |
-| `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `save(file): void`. Same `PackageJsonFile` API as above. |
+| `UpWebiny` | `../../tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — **always pass `this.version`, never a hardcoded string** |
+| `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
+| `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
 | `RegistryService` | `../../service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves the current `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
@@ -135,7 +149,7 @@ To ship a bugfix for an already-released upgrade (e.g. `6.1.0`), create a new up
 ## Rules
 
 - `canHandle` must return `this.version.between(currentVersion, targetVersion)` — this upgrade's hardcoded version must fall in the range
-- Do **not** call `upWebiny.execute()` in `execute` — the handler pins all `@webiny/*` packages to the target version after all steps complete
+- Always call `await this.upWebiny.execute({ version: this.version })` in `execute` — pass `this.version`, **never** a hardcoded version string (the user may target a pre-release like `6.3.0-beta.0`)
 - Never check the npm registry in `canHandle` or `execute` — the version does not exist yet
 - Always inject dependencies, never instantiate services directly
 - Use relative imports, not `~/`
