@@ -73,14 +73,14 @@ describe("Upgrade 6.3.0 - execute", () => {
         expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.3.0") });
     });
 
-    it("sets typescript devDependency to 6.0.2", async () => {
+    it("sets typescript devDependency to 6.0.3", async () => {
         const file = createMockPackageJsonFile();
         const container = createContainer(file);
         const upgrade = container.resolve(Upgrade);
 
         await upgrade.execute();
 
-        expect(file.getDevDependency("typescript")).toBe("6.0.2");
+        expect(file.getDevDependency("typescript")).toBe("6.0.3");
     });
 
     it("saves the package.json after setting dependencies", async () => {
