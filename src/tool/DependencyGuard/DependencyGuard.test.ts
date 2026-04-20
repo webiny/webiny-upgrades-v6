@@ -7,6 +7,7 @@ import { Input } from "../../base/Input/index.js";
 import { Logger } from "../../base/Logger/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
+import { ReferencesFileMissingError } from "../../service/References/index.js";
 import { ReferencesService as ReferencesServiceImpl } from "../../service/References/ReferencesService.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 
@@ -251,7 +252,7 @@ describe("DependencyGuard", () => {
             mockLoadJsonFileSync.mockImplementation(() => {
                 throw new Error("ENOENT");
             });
-            expect(() => guard.execute()).toThrow("Failed to load references.json from");
+            expect(() => guard.execute()).toThrow(ReferencesFileMissingError);
         });
     });
 });
