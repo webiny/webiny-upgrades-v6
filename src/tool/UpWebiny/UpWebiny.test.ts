@@ -3,6 +3,7 @@ import { Container } from "@webiny/di";
 import { UpWebiny as UpWebinyImpl } from "./UpWebiny.js";
 import { UpWebiny } from "./abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { Version } from "../../base/Version/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
@@ -15,7 +16,7 @@ const createContainer = (file: PackageJsonFile.Interface | null = createMockPack
         load: vi.fn().mockReturnValue(file),
         loadOrThrow: vi.fn().mockImplementation(() => {
             if (!file) {
-                throw new Error("Failed to load package.json");
+                throw new PackageJsonLoadError("/project/package.json");
             }
             return file;
         }),
@@ -29,9 +30,7 @@ describe("UpWebiny", () => {
     describe("execute", () => {
         it("throws when package.json cannot be loaded", async () => {
             const tool = createContainer(null).resolve(UpWebiny);
-            expect(() => tool.execute({ version: v("6.1.0") })).toThrow(
-                "Failed to load package.json"
-            );
+            expect(() => tool.execute({ version: v("6.1.0") })).toThrow(PackageJsonLoadError);
         });
 
         it("sets webiny dependency to the target version and removes it from devDependencies", async () => {

@@ -4,6 +4,7 @@ import { PackageJsonTool as PackageJsonToolImpl } from "./PackageJsonTool.js";
 import { PackageJsonTool } from "./abstraction.js";
 import { Context } from "../../base/Context/abstraction.js";
 import { PackageJsonService } from "../../service/PackageJson/abstraction.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/PackageJsonLoadError.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 
 const createContainer = (resolvedPath = "/project/package.json") => {
@@ -15,7 +16,7 @@ const createContainer = (resolvedPath = "/project/package.json") => {
     container.registerInstance(PackageJsonService, {
         load: vi.fn().mockReturnValue(null),
         loadOrThrow: vi.fn().mockImplementation(() => {
-            throw new Error("Failed to load package.json");
+            throw new PackageJsonLoadError("/project/package.json");
         }),
         save: vi.fn()
     });
@@ -102,7 +103,7 @@ describe("PackageJsonTool", () => {
             const container = createContainer();
             const tool = container.resolve(PackageJsonTool);
 
-            expect(() => tool.loadOrThrow()).toThrow("Failed to load package.json");
+            expect(() => tool.loadOrThrow()).toThrow(PackageJsonLoadError);
         });
 
         it("passes the provided target path directly to the service", () => {

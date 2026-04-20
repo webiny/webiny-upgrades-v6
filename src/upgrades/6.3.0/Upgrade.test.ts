@@ -3,6 +3,7 @@ import { Container } from "@webiny/di";
 import { Upgrade as Upgrade630 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
@@ -87,6 +88,6 @@ describe("Upgrade 6.3.0 - execute", () => {
         const container = createContainer(null);
         const upgrade = container.resolve(Upgrade);
 
-        await expect(upgrade.execute()).rejects.toThrow("Failed to load package.json");
+        await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
     });
 });

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Container } from "@webiny/di";
 import { PackageJsonService as PackageJsonServiceImpl } from "./PackageJsonService.js";
 import { PackageJsonService } from "./abstraction.js";
+import { PackageJsonLoadError } from "./PackageJsonLoadError.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
@@ -79,7 +80,7 @@ describe("PackageJsonService", () => {
             expect(file.raw).toBe(raw);
         });
 
-        it("throws when the file cannot be loaded", () => {
+        it("throws PackageJsonLoadError when the file cannot be loaded", () => {
             (loadJsonFileSync as any).mockImplementation(() => {
                 throw new Error("ENOENT: file not found");
             });
@@ -87,8 +88,24 @@ describe("PackageJsonService", () => {
             const service = createContainer().resolve(PackageJsonService);
 
             expect(() => service.loadOrThrow("/missing/package.json")).toThrow(
-                "Failed to load /missing/package.json"
+                PackageJsonLoadError
             );
+        });
+
+        it("attaches the bad path to the thrown error", () => {
+            (loadJsonFileSync as any).mockImplementation(() => {
+                throw new Error("ENOENT: file not found");
+            });
+
+            const service = createContainer().resolve(PackageJsonService);
+
+            try {
+                service.loadOrThrow("/missing/package.json");
+                expect.unreachable();
+            } catch (err) {
+                expect(err).toBeInstanceOf(PackageJsonLoadError);
+                expect((err as PackageJsonLoadError).path).toBe("/missing/package.json");
+            }
         });
     });
 

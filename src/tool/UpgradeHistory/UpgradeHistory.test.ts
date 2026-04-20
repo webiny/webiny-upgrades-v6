@@ -3,6 +3,7 @@ import { Container } from "@webiny/di";
 import { UpgradeHistory as UpgradeHistoryImpl } from "./UpgradeHistory.js";
 import { UpgradeHistory } from "./abstraction.js";
 import { PackageJsonTool } from "../PackageJsonTool/abstraction.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { Version } from "../../base/Version/index.js";
 
@@ -153,14 +154,14 @@ describe("UpgradeHistory", () => {
             container.registerInstance(PackageJsonTool, {
                 load: vi.fn().mockReturnValue(null),
                 loadOrThrow: vi.fn().mockImplementation(() => {
-                    throw new Error("Failed to load package.json");
+                    throw new PackageJsonLoadError("/project/package.json");
                 }),
                 save: vi.fn()
             });
             container.register(UpgradeHistoryImpl);
             const history = container.resolve(UpgradeHistory);
 
-            expect(() => history.list()).toThrow("Failed to load package.json");
+            expect(() => history.list()).toThrow(PackageJsonLoadError);
         });
     });
 });

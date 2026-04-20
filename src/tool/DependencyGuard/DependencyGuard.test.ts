@@ -6,6 +6,7 @@ import { Context } from "../../base/Context/index.js";
 import { Input } from "../../base/Input/index.js";
 import { Logger } from "../../base/Logger/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { ReferencesService as ReferencesServiceImpl } from "../../service/References/ReferencesService.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 
@@ -75,7 +76,7 @@ const createContainer = (
         load: vi.fn().mockReturnValue(file),
         loadOrThrow: vi.fn().mockImplementation(() => {
             if (!file) {
-                throw new Error("Failed to load package.json");
+                throw new PackageJsonLoadError("/project/package.json");
             }
             return file;
         }),
@@ -231,7 +232,7 @@ describe("DependencyGuard", () => {
 
         it("throws when package.json cannot be loaded", () => {
             const guard = createContainer({ packageJsonFile: null }).resolve(DependencyGuard);
-            expect(() => guard.execute()).toThrow("Failed to load package.json");
+            expect(() => guard.execute()).toThrow(PackageJsonLoadError);
         });
 
         it("returns empty array immediately when skipDependencyGuard is true", () => {

@@ -70,10 +70,7 @@ const loadInstalledVersion = (params: ILoadInstalledVersionParams): Version => {
     const { container, cwd, joinPath } = params;
     const packageJsonService = container.resolve(PackageJsonService);
     const packageJsonPath = joinPath(cwd, "node_modules", "webiny", "package.json");
-    const packageJson = packageJsonService.load(packageJsonPath);
-    if (!packageJson) {
-        throw new Error(`Failed to load ${packageJsonPath}.`);
-    }
+    const packageJson = packageJsonService.loadOrThrow(packageJsonPath);
     return Version.create(packageJson.raw.version);
 };
 

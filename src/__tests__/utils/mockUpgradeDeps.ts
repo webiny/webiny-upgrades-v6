@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import type { Container as DIContainer } from "@webiny/di";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { ReferencesService } from "../../service/References/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 
@@ -16,7 +17,7 @@ export const registerUpgradeDeps = (
         load: vi.fn().mockReturnValue(file),
         loadOrThrow: vi.fn().mockImplementation(() => {
             if (!file) {
-                throw new Error("Failed to load package.json");
+                throw new PackageJsonLoadError("/project/package.json");
             }
             return file;
         }),
