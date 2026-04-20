@@ -3,7 +3,7 @@ import { Container } from "@webiny/di";
 import { Upgrade as Upgrade610 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
-import { createMockPackageJsonFile } from "./__tests__/mockPackageJsonFile.js";
+import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
