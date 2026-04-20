@@ -148,6 +148,8 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
         logger.debug(`Installed version loaded: ${installedVersion.raw}`);
     } catch (ex) {
         responder.error(ex.message, 0);
+        // Dead at runtime (responder.error is `never`), kept so TS can narrow
+        // targetVersion/installedVersion to non-null after the try/catch.
         process.exit();
     }
     ContextFeature.register(container, {

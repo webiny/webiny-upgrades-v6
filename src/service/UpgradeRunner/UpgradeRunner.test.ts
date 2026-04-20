@@ -68,6 +68,23 @@ describe("UpgradeRunner", () => {
         });
     });
 
+    describe("directory filtering", () => {
+        it("skips the __tests__ directory in the upgrades dir", async () => {
+            // fixtures/upgrades contains a __tests__/.gitkeep — the runner must
+            // not treat it as a version directory.
+            const { container, ctx } = createIntegrationContainer({
+                upgradesDir,
+                currentVersion: "5.9.0",
+                targetVersion: "6.1.0"
+            });
+
+            await container.resolve(UpgradeRunner).run();
+
+            // Only the 3 real upgrades ran; __tests__ was skipped silently.
+            expect(ctx.setCurrentVersion).toHaveBeenCalledTimes(3);
+        });
+    });
+
     describe("error cases", () => {
         it("throws when the upgrades directory does not exist", async () => {
             const { container } = createIntegrationContainer({
