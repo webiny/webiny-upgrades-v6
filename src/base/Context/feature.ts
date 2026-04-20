@@ -14,9 +14,6 @@ interface IContextParams {
 export const ContextFeature = createFeature<IContextParams>({
     name: "Base/Context",
     register(container, params) {
-        if (!params) {
-            throw new Error("ContextFeature requires parameters to be registered!");
-        }
         container.registerInstance(
             ContextAbstraction,
             new Context({
