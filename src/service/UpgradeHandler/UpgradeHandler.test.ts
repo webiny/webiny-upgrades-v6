@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Container } from "@webiny/di";
+import { DirtyGitRepositoryError } from "./DirtyGitRepositoryError.js";
 import { UpgradeHandler } from "./UpgradeHandler.js";
 import { UpgradeHandler as UpgradeHandlerToken } from "./abstraction.js";
 import type { Upgrade as UpgradeNS } from "../../base/Upgrade/abstraction.js";
@@ -100,7 +101,7 @@ describe("UpgradeHandler", () => {
             const handler = createContainer([upgrade], ctx, git).resolve(UpgradeHandlerToken);
 
             await expect(handler.handle({ version: v("6.1.0") })).rejects.toThrow(
-                "Git repository has uncommitted changes"
+                DirtyGitRepositoryError
             );
             expect(upgrade.execute).not.toHaveBeenCalled();
         });
