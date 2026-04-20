@@ -8,12 +8,7 @@ const schema = zod
     .object({
         _: zod
             .tuple([zod.string().optional()])
-            .transform(input => {
-                if (!input?.length) {
-                    return "latest";
-                }
-                return input[0] || "latest";
-            })
+            .transform(input => input[0] ?? "latest")
             .optional()
             .default("latest"),
         cwd: zod.string().optional(),
