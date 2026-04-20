@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Container } from "@webiny/di";
 import { Upgrade as Upgrade630 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
-import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { createMockPackageJsonFile } from "./__tests__/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
@@ -63,16 +62,6 @@ describe("Upgrade 6.3.0 - canHandle", () => {
 });
 
 describe("Upgrade 6.3.0 - execute", () => {
-    it("calls upWebiny.execute with its own version", async () => {
-        const container = createContainer();
-        const upWebiny = container.resolve(UpWebiny);
-        const upgrade = container.resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.3.0") });
-    });
-
     it("sets typescript devDependency to 6.0.3", async () => {
         const file = createMockPackageJsonFile();
         const container = createContainer(file);

@@ -1,15 +1,11 @@
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
-import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.1.0");
 
-    public constructor(
-        private readonly upWebiny: UpWebiny.Interface,
-        private readonly packageJsonTool: PackageJsonTool.Interface
-    ) {}
+    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
 
     public async canHandle({
         targetVersion,
@@ -19,7 +15,6 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     }
 
     public async execute(): Promise<void> {
-        this.upWebiny.execute({ version: this.version });
         const packageJson = this.packageJsonTool.loadOrThrow();
         packageJson.setDependency("react", "18.2.0");
         packageJson.setDependency("react-dom", "18.2.0");
@@ -36,5 +31,5 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [UpWebiny, PackageJsonTool]
+    dependencies: [PackageJsonTool]
 });

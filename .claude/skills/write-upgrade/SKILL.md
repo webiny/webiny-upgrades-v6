@@ -30,28 +30,19 @@ Both bounds are required — without `currentVersion`, older upgrades would re-r
 
 ```ts
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
-import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.2.0");
 
-    public constructor(
-        private readonly upWebiny: UpWebiny.Interface,
-        private readonly packageJsonTool: PackageJsonTool.Interface
-    ) {}
+    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
 
     public async canHandle({ targetVersion, currentVersion }: UpgradeAbstraction.Params): Promise<boolean> {
         return this.version.between(currentVersion, targetVersion);
     }
 
     public async execute(): Promise<void> {
-        // IMPORTANT: always pass this.version — never a hardcoded version string.
-        // The user may run the upgrade with a pre-release like 6.2.0-beta.0,
-        // and this.version resolves to the correct value.
-        this.upWebiny.execute({ version: this.version });
-
         const packageJson = this.packageJsonTool.loadOrThrow();
         // Version-specific transformations go here.
         this.packageJsonTool.save(packageJson);
@@ -60,7 +51,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [UpWebiny, PackageJsonTool]
+    dependencies: [PackageJsonTool]
 });
 ```
 
@@ -86,7 +77,6 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 |---|---|---|
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
-| `UpWebiny` | `../../tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — **always pass `this.version`, never a hardcoded string** |
 | `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
 | `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
@@ -149,7 +139,7 @@ To ship a bugfix for an already-released upgrade (e.g. `6.1.0`), create a new up
 ## Rules
 
 - `canHandle` must return `this.version.between(currentVersion, targetVersion)` — this upgrade's hardcoded version must fall in the range
-- Always call `this.upWebiny.execute({ version: this.version })` in `execute` — pass `this.version`, **never** a hardcoded version string (the user may target a pre-release like `6.3.0-beta.0`)
+- Do NOT call `upWebiny.execute()` in an upgrade — the handler pins all `@webiny/*` packages to the target version after all upgrade steps complete
 - Never check the npm registry in `canHandle` or `execute` — the version does not exist yet
 - Always inject dependencies, never instantiate services directly
 - Use relative imports, not `~/`
