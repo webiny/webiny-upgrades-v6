@@ -12,7 +12,8 @@
     "format:check": "oxfmt --check",
     "eslint": "eslint \"**/*.{js,ts}\" --max-warnings=0",
     "eslint:fix": "yarn eslint --fix",
-    "lint:fix": "yarn eslint --fix && yarn format:fix"
+    "lint:fix": "yarn eslint --fix && yarn format:fix",
+    "adio:check": "adio"
   },
   "dependencies": {
     "@webiny/di": "^0.2.3",
@@ -29,8 +30,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "@types/lodash": "^4.17.24",
     "@types/node": "^24.12.2",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.35",
@@ -40,7 +39,6 @@
     "adio": "^2.1.0",
     "eslint": "^10.2.1",
     "eslint-plugin-import-x": "^4.16.2",
-    "lodash": "^4.18.1",
     "oxfmt": "^0.45.0",
     "prettier": "3.8.3",
     "vitest": "^4.1.4"

@@ -184,10 +184,10 @@ Enforced in `vitest.config.ts`: 100% statements, functions, and lines; 98% branc
 After every change, run:
 
 ```bash
-yarn lint:fix && yarn && yarn build && yarn test
+yarn lint:fix && yarn && yarn build && yarn test && yarn adio:check
 ```
 
-(eslint --fix → oxfmt → install → type-check → tests.) If any step fails, fix the issue and re-run the full chain.
+(eslint --fix → oxfmt → install → type-check → tests → dependency sync check.) If any step fails, fix the issue and re-run the full chain.
 
 ## Rules
 
