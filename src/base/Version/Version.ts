@@ -1,4 +1,5 @@
 import semver, { type SemVer } from "semver";
+import { InvalidSemverError } from "./InvalidSemverError.js";
 
 export class Version {
     public readonly raw: string;
@@ -29,7 +30,7 @@ export class Version {
             this.raw = version.trim();
             const parsed = semver.parse(this.raw);
             if (!parsed) {
-                throw new Error(`Invalid semver version: "${version.trim()}"`);
+                throw new InvalidSemverError(this.raw);
             }
             this._semver = parsed;
         } else {

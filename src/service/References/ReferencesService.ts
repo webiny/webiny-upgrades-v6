@@ -4,6 +4,8 @@ import {
     ReferencesService as ReferencesServiceAbstraction
 } from "./abstractions.js";
 import { Context } from "../../base/Context/index.js";
+import { ReferencesFileInvalidError } from "./ReferencesFileInvalidError.js";
+import { ReferencesFileMissingError } from "./ReferencesFileMissingError.js";
 
 const REFERENCES_FILE_SEGMENTS = ["node_modules", "@webiny", "cli", "files", "references.json"];
 
@@ -37,20 +39,16 @@ class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
             return this.cache;
         }
         const filePath = this.context.resolve(...REFERENCES_FILE_SEGMENTS);
+        let raw: IReferenceFile;
         try {
-            const raw = loadJsonFileSync<IReferenceFile>(filePath);
-            if (!raw?.references?.length) {
-                throw new Error(
-                    `References file at "${filePath}" is empty or missing the "references" property.`
-                );
-            }
-            this.cache = raw.references;
+            raw = loadJsonFileSync<IReferenceFile>(filePath);
         } catch {
-            throw new Error(
-                `Failed to load references.json from "${filePath}". Make sure @webiny/cli is installed.`
-            );
+            throw new ReferencesFileMissingError(filePath);
         }
-
+        if (!raw?.references?.length) {
+            throw new ReferencesFileInvalidError(filePath);
+        }
+        this.cache = raw.references;
         return this.cache;
     }
 }

@@ -2,7 +2,11 @@ import { describe, it, expect } from "vitest";
 import path from "node:path";
 import { UpgradeRunner } from "./abstraction.js";
 import { createIntegrationContainer } from "../../__tests__/utils/createIntegrationContainer.js";
-import { Version } from "../../base/Version/index.js";
+import { InvalidSemverError, Version } from "../../base/Version/index.js";
+import { UpgradeFeatureExportError } from "./UpgradeFeatureExportError.js";
+import { UpgradeIndexMissingError } from "./UpgradeIndexMissingError.js";
+import { UpgradesDirectoryEmptyError } from "./UpgradesDirectoryEmptyError.js";
+import { UpgradesDirectoryNotFoundError } from "./UpgradesDirectoryNotFoundError.js";
 
 const v = (version: string) => Version.create(version);
 
@@ -68,6 +72,23 @@ describe("UpgradeRunner", () => {
         });
     });
 
+    describe("directory filtering", () => {
+        it("skips the __tests__ directory in the upgrades dir", async () => {
+            // fixtures/upgrades contains a __tests__/.gitkeep — the runner must
+            // not treat it as a version directory.
+            const { container, ctx } = createIntegrationContainer({
+                upgradesDir,
+                currentVersion: "5.9.0",
+                targetVersion: "6.1.0"
+            });
+
+            await container.resolve(UpgradeRunner).run();
+
+            // Only the 3 real upgrades ran; __tests__ was skipped silently.
+            expect(ctx.setCurrentVersion).toHaveBeenCalledTimes(3);
+        });
+    });
+
     describe("error cases", () => {
         it("throws when the upgrades directory does not exist", async () => {
             const { container } = createIntegrationContainer({
@@ -77,7 +98,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "Upgrades directory does not exist"
+                UpgradesDirectoryNotFoundError
             );
         });
 
@@ -89,7 +110,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "No upgrade scripts found"
+                UpgradesDirectoryEmptyError
             );
         });
 
@@ -101,7 +122,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "is not a valid semver version"
+                InvalidSemverError
             );
         });
 
@@ -113,7 +134,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "is missing an index.ts file"
+                UpgradeIndexMissingError
             );
         });
 
@@ -125,7 +146,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "does not export a valid feature"
+                UpgradeFeatureExportError
             );
         });
     });

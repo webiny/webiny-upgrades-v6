@@ -46,10 +46,7 @@ class DependencyGuardImpl implements DependencyGuardAbstraction.Interface {
             return [];
         }
 
-        const packageJson = this.packageJsonTool.load();
-        if (!packageJson) {
-            throw new Error("Failed to load package.json");
-        }
+        const packageJson = this.packageJsonTool.loadOrThrow();
         const mismatches: DependencyGuardAbstraction.Mismatch[] = [];
 
         const getUserSection = (section: Section): Record<string, string> => {

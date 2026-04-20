@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Container } from "@webiny/di";
 import { PackageJsonService as PackageJsonServiceImpl } from "./PackageJsonService.js";
 import { PackageJsonService } from "./abstraction.js";
+import { PackageJsonLoadError } from "./PackageJsonLoadError.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
@@ -63,6 +64,48 @@ describe("PackageJsonService", () => {
 
             expect(result).toBeNull();
             expect(logger.error).toHaveBeenCalledWith("ENOENT: file not found");
+        });
+    });
+
+    describe("loadOrThrow", () => {
+        it("returns a PackageJsonFile when the file exists", () => {
+            const raw = { name: "my-app", version: "1.0.0" };
+            (loadJsonFileSync as any).mockReturnValue(raw);
+
+            const service = createContainer().resolve(PackageJsonService);
+            const file = service.loadOrThrow("/project/package.json");
+
+            expect(file).not.toBeNull();
+            expect(file.path).toBe("/project/package.json");
+            expect(file.raw).toBe(raw);
+        });
+
+        it("throws PackageJsonLoadError when the file cannot be loaded", () => {
+            (loadJsonFileSync as any).mockImplementation(() => {
+                throw new Error("ENOENT: file not found");
+            });
+
+            const service = createContainer().resolve(PackageJsonService);
+
+            expect(() => service.loadOrThrow("/missing/package.json")).toThrow(
+                PackageJsonLoadError
+            );
+        });
+
+        it("attaches the bad path to the thrown error", () => {
+            (loadJsonFileSync as any).mockImplementation(() => {
+                throw new Error("ENOENT: file not found");
+            });
+
+            const service = createContainer().resolve(PackageJsonService);
+
+            try {
+                service.loadOrThrow("/missing/package.json");
+                expect.unreachable();
+            } catch (err) {
+                expect(err).toBeInstanceOf(PackageJsonLoadError);
+                expect((err as PackageJsonLoadError).path).toBe("/missing/package.json");
+            }
         });
     });
 

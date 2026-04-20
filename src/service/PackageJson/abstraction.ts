@@ -67,6 +67,7 @@ export namespace PackageJsonFile {
 
 interface IPackageJsonService {
     load(target: string): IPackageJsonFile | null;
+    loadOrThrow(target: string): IPackageJsonFile;
     save(target: IPackageJsonFile): void;
 }
 

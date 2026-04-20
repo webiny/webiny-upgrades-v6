@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Version } from "./Version.js";
+import { InvalidSemverError } from "./InvalidSemverError.js";
 
 const v = (version: string) => Version.create(version).toSemVer();
 
@@ -13,8 +14,18 @@ describe("Version", () => {
             expect(() => Version.create(v("6.1.0"))).not.toThrow();
         });
 
-        it("throws on invalid version string", () => {
-            expect(() => Version.create("not-a-version")).toThrow("Invalid semver version");
+        it("throws InvalidSemverError on invalid version string", () => {
+            expect(() => Version.create("not-a-version")).toThrow(InvalidSemverError);
+        });
+
+        it("attaches the bad input to the thrown error", () => {
+            try {
+                Version.create("not-a-version");
+                expect.unreachable();
+            } catch (err) {
+                expect(err).toBeInstanceOf(InvalidSemverError);
+                expect((err as InvalidSemverError).input).toBe("not-a-version");
+            }
         });
     });
 

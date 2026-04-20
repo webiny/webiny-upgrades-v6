@@ -5,6 +5,7 @@ import {
 import { loadJsonFileSync } from "load-json-file";
 import { writeJsonFileSync } from "write-json-file";
 import { PackageJsonFile } from "../../service/PackageJson/PackageJsonFile.js";
+import { PackageJsonLoadError } from "./PackageJsonLoadError.js";
 import { Logger } from "../../base/Logger/index.js";
 
 class PackageJsonServiceImpl implements PackageJsonServiceAbstraction.Interface {
@@ -22,6 +23,14 @@ class PackageJsonServiceImpl implements PackageJsonServiceAbstraction.Interface 
             this.logger.error(ex.message);
             return null;
         }
+    }
+
+    public loadOrThrow(target: string): PackageJsonServiceAbstraction.File {
+        const file = this.load(target);
+        if (!file) {
+            throw new PackageJsonLoadError(target);
+        }
+        return file;
     }
 
     public save(target: PackageJsonServiceAbstraction.File): void {

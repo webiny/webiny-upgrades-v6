@@ -4,6 +4,10 @@ import { pathToFileURL } from "node:url";
 import { Version } from "../../base/Version/index.js";
 import { UpgradeRunner as UpgradeRunnerAbstraction } from "./abstraction.js";
 import { UpgradesDirectory } from "./UpgradesDirectory.js";
+import { UpgradeFeatureExportError } from "./UpgradeFeatureExportError.js";
+import { UpgradeIndexMissingError } from "./UpgradeIndexMissingError.js";
+import { UpgradesDirectoryEmptyError } from "./UpgradesDirectoryEmptyError.js";
+import { UpgradesDirectoryNotFoundError } from "./UpgradesDirectoryNotFoundError.js";
 import { UpgradeHandler } from "../UpgradeHandler/index.js";
 import { Container } from "../../base/Container/index.js";
 import { Context } from "../../base/Context/index.js";
@@ -26,7 +30,7 @@ class UpgradeRunnerImpl implements UpgradeRunnerAbstraction.Interface {
         const { targetVersion } = this.context;
 
         if (!fs.existsSync(this.upgradesDir)) {
-            throw new Error(`Upgrades directory does not exist: "${this.upgradesDir}".`);
+            throw new UpgradesDirectoryNotFoundError(this.upgradesDir);
         }
 
         const directories = fs
@@ -41,33 +45,23 @@ class UpgradeRunnerImpl implements UpgradeRunnerAbstraction.Interface {
             });
 
         if (directories.length === 0) {
-            throw new Error(`No upgrade scripts found in "${this.upgradesDir}".`);
+            throw new UpgradesDirectoryEmptyError(this.upgradesDir);
         }
 
         const sorted = directories
-            .map(entry => {
-                const parsed = Version.parse(entry.name);
-                if (!parsed) {
-                    throw new Error(
-                        `Upgrade directory "${entry.name}" is not a valid semver version.`
-                    );
-                }
-                return { parsed, name: entry.name };
-            })
+            .map(entry => ({ parsed: Version.create(entry.name), name: entry.name }))
             .sort((a, b) => a.parsed.compareTo(b.parsed));
 
         for (const { name } of sorted) {
             const indexPath = path.join(this.upgradesDir, name, "index.ts");
 
             if (!fs.existsSync(indexPath)) {
-                throw new Error(`Upgrade directory "${name}" is missing an index.ts file.`);
+                throw new UpgradeIndexMissingError(name);
             }
 
             const mod = (await import(pathToFileURL(indexPath).href)) as IRunner | null;
             if (!isFeature(mod?.default)) {
-                throw new Error(
-                    `Upgrade script "${name}/index.ts" does not export a valid feature.`
-                );
+                throw new UpgradeFeatureExportError(name);
             }
 
             mod.default.register(this.container);

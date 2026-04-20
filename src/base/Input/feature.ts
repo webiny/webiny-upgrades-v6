@@ -17,9 +17,6 @@ interface IInputParams {
 export const InputFeature = createFeature<IInputParams>({
     name: "Base/Input",
     register(container, params) {
-        if (!params) {
-            throw new Error(`InputFeature requires parameters to be registered!`);
-        }
         container.registerInstance(Input, {
             cwd: params.cwd,
             registry: params.registry,

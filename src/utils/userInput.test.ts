@@ -86,4 +86,23 @@ describe("getUserInput", () => {
             expect(result.logLevel).toBe("debug");
         });
     });
+
+    describe("dryRun", () => {
+        it("is false by default", () => {
+            const result = getUserInput({ cwd: "/project" });
+            expect(result.dryRun).toBe(false);
+        });
+
+        it("is true when --dry-run is passed", () => {
+            setArgv("--dry-run");
+            const result = getUserInput({ cwd: "/project" });
+            expect(result.dryRun).toBe(true);
+        });
+
+        it("forces logLevel to 'debug' when --dry-run is set", () => {
+            setArgv("--dry-run", "--log-level", "error");
+            const result = getUserInput({ cwd: "/project" });
+            expect(result.logLevel).toBe("debug");
+        });
+    });
 });

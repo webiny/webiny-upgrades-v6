@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Container } from "@webiny/di";
+import { DirtyGitRepositoryError } from "./DirtyGitRepositoryError.js";
 import { UpgradeHandler } from "./UpgradeHandler.js";
 import { UpgradeHandler as UpgradeHandlerToken } from "./abstraction.js";
 import type { Upgrade as UpgradeNS } from "../../base/Upgrade/abstraction.js";
@@ -100,7 +101,7 @@ describe("UpgradeHandler", () => {
             const handler = createContainer([upgrade], ctx, git).resolve(UpgradeHandlerToken);
 
             await expect(handler.handle({ version: v("6.1.0") })).rejects.toThrow(
-                "Git repository has uncommitted changes"
+                DirtyGitRepositoryError
             );
             expect(upgrade.execute).not.toHaveBeenCalled();
         });
@@ -279,6 +280,25 @@ describe("UpgradeHandler", () => {
             );
 
             await expect(handler.handle({ version: v("6.1.0") })).rejects.toThrow("step failed");
+            expect(git.restore).toHaveBeenCalledOnce();
+        });
+
+        it("calls git.restore and rethrows when a forced upgrade step fails", async () => {
+            const upgrade1 = createMockUpgrade("6.1.0");
+            const upgrade2 = createMockUpgrade("6.2.0");
+            upgrade2.execute.mockRejectedValue(new Error("forced step failed"));
+
+            const ctx = createMockContext("6.0.0", "6.2.0");
+            const git = createMockGit();
+            const container = createContainer([upgrade1, upgrade2], ctx, git);
+            const input = container.resolve(Input);
+            (input as any).forceUpgrade = true;
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await expect(handler.handle({ version: v("6.2.0") })).rejects.toThrow(
+                "forced step failed"
+            );
+            expect(upgrade1.execute).toHaveBeenCalledOnce();
             expect(git.restore).toHaveBeenCalledOnce();
         });
 

@@ -7,15 +7,9 @@ const DEFAULT_REGISTRY = "https://registry.npmjs.org";
 const schema = zod
     .object({
         _: zod
-            .tuple([zod.string().optional()])
-            .transform(input => {
-                if (!input?.length) {
-                    return "latest";
-                }
-                return input[0] || "latest";
-            })
-            .optional()
-            .default("latest"),
+            .array(zod.string())
+            .max(1)
+            .transform(input => input[0] ?? "latest"),
         cwd: zod.string().optional(),
         logLevel: zod.enum(["debug", "info", "warn", "error"]).default("error"),
         json: zod.boolean(),
@@ -128,6 +122,8 @@ export const getUserInput = (params: IGetUserInputParams): IGetUserInputResult =
 
     const result = schema.safeParse(input);
     if (!result.success) {
+        // Exception to the "no console" rule: Logger is built downstream from
+        // this parsed input, so it isn't available here.
         console.error("Invalid arguments.");
         console.log(JSON.stringify(result.error));
         process.exit(1);

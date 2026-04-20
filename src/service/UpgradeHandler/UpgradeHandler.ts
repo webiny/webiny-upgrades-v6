@@ -1,4 +1,5 @@
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
+import { DirtyGitRepositoryError } from "./DirtyGitRepositoryError.js";
 import { UpgradeHandler as UpgradeHandlerAbstraction } from "./abstraction.js";
 import { Context } from "../../base/Context/index.js";
 import { Logger } from "../../base/Logger/index.js";
@@ -24,9 +25,7 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
     public async handle(params: UpgradeHandlerAbstraction.Params): Promise<void> {
         const isClean = await this.git.isClean();
         if (!isClean) {
-            throw new Error(
-                "Git repository has uncommitted changes. Please commit or stash them before upgrading."
-            );
+            throw new DirtyGitRepositoryError();
         }
 
         const upgradeParams: Upgrade.Params = {
@@ -90,7 +89,7 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
         const installVersion = this.input.installVersion
             ? Version.create(this.input.installVersion)
             : params.version;
-        await this.upWebiny.execute({ version: installVersion });
+        this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
     }
 }

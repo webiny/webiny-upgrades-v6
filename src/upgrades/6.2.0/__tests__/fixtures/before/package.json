@@ -1,0 +1,16 @@
+{
+    "name": "my-app",
+    "version": "1.0.0",
+    "packageManager": "yarn@4.10.0",
+    "dependencies": {
+        "webiny": "6.1.0",
+        "@webiny/cli": "6.1.0",
+        "@webiny/mcp": "6.1.0",
+        "react": "18.2.0",
+        "react-dom": "18.2.0"
+    },
+    "devDependencies": {
+        "@types/react": "18.2.79",
+        "@types/react-dom": "18.2.25"
+    }
+}

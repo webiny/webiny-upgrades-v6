@@ -1,28 +1,34 @@
 import type { Container } from "@webiny/di";
 
-export interface FeatureDefinition<TRegister> {
-    name: string;
-    register(container: Container, context?: TRegister): void;
-}
+const FEATURE_METADATA_KEY = "wby:upgrades:isFeature" as const;
 
-export function createFeature<TRegister>(def: {
-    name: string;
-    register(container: Container, context?: TRegister): void;
-}): FeatureDefinition<TRegister> {
+export type FeatureDefinition<TRegister = void> = [TRegister] extends [void]
+    ? {
+          name: string;
+          register(container: Container): void;
+      }
+    : {
+          name: string;
+          register(container: Container, params: TRegister): void;
+      };
+
+export function createFeature<TRegister = void>(
+    def: FeatureDefinition<TRegister>
+): FeatureDefinition<TRegister> {
     const feature = {
         name: def.name,
         register: def.register
     };
 
-    Reflect.defineMetadata("wby:upgrades:isFeature", true, feature);
+    Reflect.defineMetadata(FEATURE_METADATA_KEY, true, feature);
 
     return feature as FeatureDefinition<TRegister>;
 }
 
-export const isFeature = (obj: unknown): obj is FeatureDefinition<unknown> => {
+export const isFeature = (obj: unknown): obj is FeatureDefinition<void> => {
     return (
         typeof obj === "object" &&
         obj !== null &&
-        Reflect.getMetadata("wby:upgrades:isFeature", obj) === true
+        Reflect.getMetadata(FEATURE_METADATA_KEY, obj) === true
     );
 };

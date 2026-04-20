@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Container } from "@webiny/di";
 import { ReferencesService as ReferencesServiceImpl } from "./ReferencesService.js";
 import { ReferencesService } from "./abstractions.js";
+import { ReferencesFileInvalidError } from "./ReferencesFileInvalidError.js";
+import { ReferencesFileMissingError } from "./ReferencesFileMissingError.js";
 import { Context } from "../../base/Context/abstraction.js";
 
 vi.mock("load-json-file", () => ({ loadJsonFileSync: vi.fn() }));
@@ -79,30 +81,24 @@ describe("ReferencesService", () => {
     });
 
     describe("error handling", () => {
-        it("throws when references.json cannot be loaded", () => {
+        it("throws ReferencesFileMissingError when references.json cannot be loaded", () => {
             (loadJsonFileSync as any).mockImplementation(() => {
                 throw new Error("ENOENT");
             });
             const service = createContainer().resolve(ReferencesService);
-            expect(() => service.getReference("@webiny/cli")).toThrow(
-                "Failed to load references.json"
-            );
+            expect(() => service.getReference("@webiny/cli")).toThrow(ReferencesFileMissingError);
         });
 
-        it("throws when references.json has no references array", () => {
+        it("throws ReferencesFileInvalidError when references.json has no references array", () => {
             (loadJsonFileSync as any).mockReturnValue({});
             const service = createContainer().resolve(ReferencesService);
-            expect(() => service.getReference("@webiny/cli")).toThrow(
-                "Failed to load references.json"
-            );
+            expect(() => service.getReference("@webiny/cli")).toThrow(ReferencesFileInvalidError);
         });
 
-        it("throws when references array is empty", () => {
+        it("throws ReferencesFileInvalidError when references array is empty", () => {
             (loadJsonFileSync as any).mockReturnValue({ references: [] });
             const service = createContainer().resolve(ReferencesService);
-            expect(() => service.getReference("@webiny/cli")).toThrow(
-                "Failed to load references.json"
-            );
+            expect(() => service.getReference("@webiny/cli")).toThrow(ReferencesFileInvalidError);
         });
     });
 });

@@ -17,11 +17,7 @@ class NpmImpl implements PackageManagerAbstraction.Interface {
 
     public async version(): Promise<Version> {
         const { stdout } = await execa("npm", ["--version"]);
-        const result = Version.parse(stdout.trim());
-        if (!result) {
-            throw new Error(`Failed to parse npm version: ${stdout.trim()}`);
-        }
-        return result;
+        return Version.create(stdout.trim());
     }
 }
 

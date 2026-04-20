@@ -21,7 +21,12 @@ Use relative imports throughout — `~/` aliases are not reliable here.
 
 Implement `Upgrade.Interface` — a `version` property and two methods: `canHandle` and `execute`.
 
-`canHandle` returns `true` when this upgrade's version falls within the requested range: greater than `currentVersion` (not already applied) and less than or equal to `targetVersion` (within scope). The handler also checks upgrade history and skips already-executed upgrades. Do not use registry checks — the version does not exist on npm yet when the upgrade is being written.
+`canHandle` returns `true` when this upgrade's version falls within the range `(currentVersion, targetVersion]` — strictly greater than `currentVersion` and less than or equal to `targetVersion`.
+
+- **`currentVersion`** is the user's installed Webiny version. It acts as a lower bound so that upgrades at or below the user's current version are skipped. The handler advances `currentVersion` after each successful upgrade step, so when running `6.1.0 → 6.3.0`, the 6.2.0 upgrade sees `currentVersion=6.1.0` and the 6.3.0 upgrade sees `currentVersion=6.2.0`.
+- **`targetVersion`** is the version the user wants to reach. It caps the upper bound so only relevant upgrades run.
+
+Both bounds are required — without `currentVersion`, older upgrades would re-run on every invocation. The handler also checks upgrade history and skips already-executed upgrades as a second layer of protection. Do not use registry checks — the version does not exist on npm yet when the upgrade is being written.
 
 ```ts
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
@@ -38,9 +43,9 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     }
 
     public async execute(): Promise<void> {
-        // Version-specific transformations only.
-        // Do NOT call upWebiny.execute() — the handler pins all @webiny/*
-        // packages to the target version after all upgrade steps complete.
+        const packageJson = this.packageJsonTool.loadOrThrow();
+        // Version-specific transformations go here.
+        this.packageJsonTool.save(packageJson);
     }
 }
 
@@ -72,9 +77,8 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 |---|---|---|
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
-| `UpWebiny` | `../../tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — **called by the handler, not by upgrade scripts** |
-| `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null` — loads `package.json` from cwd or given path. `save(file): void` — writes back to disk. See **PackageJsonFile API** below. |
-| `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `save(file): void`. Same `PackageJsonFile` API as above. |
+| `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
+| `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
 | `RegistryService` | `../../service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves the current `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
@@ -116,17 +120,78 @@ file.get(key: string): unknown
 file.set(key: string, value: unknown): void
 ```
 
+## Testing
+
+Every upgrade needs both a unit test and an integration test.
+
+### Unit test (`Upgrade.test.ts`)
+
+Next to `Upgrade.ts`. Mocks `PackageJsonTool` via `registerUpgradeDeps`. Uses the canonical `createMockPackageJsonFile` from `src/__tests__/utils/`. Existing examples: `src/upgrades/6.3.0/Upgrade.test.ts`.
+
+### Integration test (`Upgrade.integration.test.ts`)
+
+Next to `Upgrade.ts`. Uses the real `UpgradeHandler` + `UpgradeRunner` pipeline against a fixture `package.json` copied into a tmpdir.
+
+Layout:
+
+```
+src/upgrades/<version>/
+├── Upgrade.ts
+├── Upgrade.test.ts
+├── Upgrade.integration.test.ts
+├── __tests__/
+│   └── fixtures/
+│       └── before/
+│           └── package.json         ← hand-written, minimal, self-contained
+└── index.ts
+```
+
+Test shape:
+
+```ts
+import { describe, it, expect } from "vitest";
+import path from "node:path";
+import { createUpgradeIntegrationHarness } from "../../__tests__/utils/createUpgradeIntegrationHarness.js";
+
+const fixtureDir = path.join(import.meta.dirname, "__tests__", "fixtures", "before");
+
+describe("Upgrade 6.x.0 - integration", () => {
+    it("applies its transformations and pins @webiny/* to the target version", async () => {
+        const harness = await createUpgradeIntegrationHarness({
+            fixtureDir,
+            currentVersion: "6.(x-1).0",
+            targetVersion: "6.x.0"
+        });
+
+        await harness.run();
+
+        const pkg = harness.readPackageJson();
+        // assert upgrade-specific transformations
+        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.x.0");
+        expect(harness.upgradeHistory.list()).toContainEqual(
+            expect.objectContaining({ version: "6.x.0" })
+        );
+    });
+});
+```
+
+### Chain test
+
+After shipping a new upgrade, bump `targetVersion` and extend assertions in `src/__tests__/integration/chain.test.ts`.
+
+### Coverage
+
+Thresholds in `vitest.config.ts` enforce 100% statements / functions / lines and 98% branches. `yarn test:coverage` fails if any threshold regresses.
+
 ## Post-Task Sequence
 
-After every change, run these commands in order:
+After every change, run:
 
-1. `yarn prettier:fix`
-2. `yarn eslint:fix`
-3. `yarn`
-4. `yarn build`
-5. `yarn test`
+```bash
+yarn lint:fix && yarn && yarn build && yarn test && yarn adio:check
+```
 
-If any step fails, fix the issue and restart from step 1.
+If any step fails, fix the issue and re-run the full chain.
 
 ## Fix Upgrades
 
@@ -135,7 +200,7 @@ To ship a bugfix for an already-released upgrade (e.g. `6.1.0`), create a new up
 ## Rules
 
 - `canHandle` must return `this.version.between(currentVersion, targetVersion)` — this upgrade's hardcoded version must fall in the range
-- Do **not** call `upWebiny.execute()` in `execute` — the handler pins all `@webiny/*` packages to the target version after all steps complete
+- Do NOT call `upWebiny.execute()` in an upgrade — the handler pins all `@webiny/*` packages to the target version after all upgrade steps complete
 - Never check the npm registry in `canHandle` or `execute` — the version does not exist yet
 - Always inject dependencies, never instantiate services directly
 - Use relative imports, not `~/`

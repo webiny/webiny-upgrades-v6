@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs";
+import { PackageManagerDetectionError } from "./PackageManagerDetectionError.js";
 
 export type PackageManagerName = "yarn" | "pnpm" | "npm";
 
@@ -19,7 +20,5 @@ export const detectPackageManager = (
     if (fs.existsSync(path.join(cwd, "package-lock.json"))) {
         return "npm";
     }
-    throw new Error(
-        `Could not detect package manager in "${cwd}". No yarn.lock, pnpm-lock.yaml, or package-lock.json found. Use --package-manager to specify one.`
-    );
+    throw new PackageManagerDetectionError(cwd);
 };

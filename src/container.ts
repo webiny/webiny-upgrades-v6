@@ -4,7 +4,12 @@ import { Logger, LoggerFeature } from "./base/Logger/index.js";
 import { InputFeature } from "./base/Input/index.js";
 import { PackageJsonFeature, PackageJsonService } from "./service/PackageJson/index.js";
 import { PackageManagerFeature } from "./service/PackageManager/index.js";
-import { RegistryFeature, RegistryService } from "./service/Registry/index.js";
+import {
+    LatestVersionUnavailableError,
+    RegistryFeature,
+    RegistryService,
+    VersionNotFoundError
+} from "./service/Registry/index.js";
 import { ContextFeature } from "./base/Context/index.js";
 import { ContainerFeature } from "./base/Container/index.js";
 import { GitFeature } from "./service/Git/index.js";
@@ -44,13 +49,13 @@ const resolveTargetVersion = async (params: IResolveTargetVersionParams): Promis
     if (!version || version === "latest") {
         const result = await npm.getLatestVersion("webiny");
         if (!result) {
-            throw new Error("Failed to fetch latest version of Webiny.");
+            throw new LatestVersionUnavailableError("Webiny");
         }
         return result;
     }
     const result = await npm.getVersion("webiny", version);
     if (!result) {
-        throw new Error(`Webiny version "${version}" does not exist in the registry.`);
+        throw new VersionNotFoundError("Webiny", version);
     }
     return result;
 };
@@ -65,17 +70,8 @@ const loadInstalledVersion = (params: ILoadInstalledVersionParams): Version => {
     const { container, cwd, joinPath } = params;
     const packageJsonService = container.resolve(PackageJsonService);
     const packageJsonPath = joinPath(cwd, "node_modules", "webiny", "package.json");
-    const packageJson = packageJsonService.load(packageJsonPath);
-    if (!packageJson) {
-        throw new Error(`Failed to load ${packageJsonPath}.`);
-    }
-    const installedVersion = Version.parse(packageJson.raw.version);
-    if (!installedVersion) {
-        throw new Error(
-            `Failed to parse installed Webiny version from package.json: ${packageJson.raw.version}`
-        );
-    }
-    return installedVersion;
+    const packageJson = packageJsonService.loadOrThrow(packageJsonPath);
+    return Version.create(packageJson.raw.version);
 };
 
 export const createContainer = async (params: ICreateContainerParams): Promise<Container> => {
@@ -130,11 +126,7 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
          * Otherwise, use whatever the registry resolved (handles "latest" → actual version).
          */
         if (params.installVersion) {
-            const parsed = Version.parse(params.version);
-            if (!parsed) {
-                throw new Error(`Invalid version: "${params.version}".`);
-            }
-            targetVersion = parsed;
+            targetVersion = Version.create(params.version);
         } else {
             targetVersion = resolved;
         }
@@ -148,6 +140,8 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
         logger.debug(`Installed version loaded: ${installedVersion.raw}`);
     } catch (ex) {
         responder.error(ex.message, 0);
+        // Dead at runtime (responder.error is `never`), kept so TS can narrow
+        // targetVersion/installedVersion to non-null after the try/catch.
         process.exit();
     }
     ContextFeature.register(container, {
