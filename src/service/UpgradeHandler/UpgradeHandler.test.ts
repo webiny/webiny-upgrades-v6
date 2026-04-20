@@ -282,6 +282,25 @@ describe("UpgradeHandler", () => {
             expect(git.restore).toHaveBeenCalledOnce();
         });
 
+        it("calls git.restore and rethrows when a forced upgrade step fails", async () => {
+            const upgrade1 = createMockUpgrade("6.1.0");
+            const upgrade2 = createMockUpgrade("6.2.0");
+            upgrade2.execute.mockRejectedValue(new Error("forced step failed"));
+
+            const ctx = createMockContext("6.0.0", "6.2.0");
+            const git = createMockGit();
+            const container = createContainer([upgrade1, upgrade2], ctx, git);
+            const input = container.resolve(Input);
+            (input as any).forceUpgrade = true;
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await expect(handler.handle({ version: v("6.2.0") })).rejects.toThrow(
+                "forced step failed"
+            );
+            expect(upgrade1.execute).toHaveBeenCalledOnce();
+            expect(git.restore).toHaveBeenCalledOnce();
+        });
+
         it("calls packageManager.install on success", async () => {
             const upgrade = createMockUpgrade("6.1.0");
             const ctx = createMockContext("6.0.0", "6.1.0");

@@ -128,6 +128,8 @@ export const getUserInput = (params: IGetUserInputParams): IGetUserInputResult =
 
     const result = schema.safeParse(input);
     if (!result.success) {
+        // Exception to the "no console" rule: Logger is built downstream from
+        // this parsed input, so it isn't available here.
         console.error("Invalid arguments.");
         console.log(JSON.stringify(result.error));
         process.exit(1);
