@@ -5,6 +5,7 @@ import { YarnPackageManager } from "./YarnPackageManager.js";
 import { PnpmPackageManager } from "./PnpmPackageManager.js";
 import { NpmPackageManager } from "./NpmPackageManager.js";
 import { detectPackageManager } from "./detect.js";
+import { PackageManagerDetectionError } from "./PackageManagerDetectionError.js";
 import { InvalidSemverError } from "../../base/Version/index.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
@@ -54,7 +55,7 @@ describe("detectPackageManager", () => {
 
     it("throws when no lock file is found and no forced value", () => {
         (fs.existsSync as any).mockReturnValue(false);
-        expect(() => detectPackageManager("/project")).toThrow("Could not detect package manager");
+        expect(() => detectPackageManager("/project")).toThrow(PackageManagerDetectionError);
     });
 });
 
