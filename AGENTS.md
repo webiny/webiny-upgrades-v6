@@ -78,12 +78,12 @@ Use relative imports — `~/` aliases are not available in all contexts.
 |---|---|---|
 | `Context` | `base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (advances after each upgrade step), `setCurrentVersion()`, `resolve()` |
 | `Logger` | `base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `{ _done: true }` metadata; JSON transport maps it to `type: "done"`) |
-| `PackageJsonService` | `service/PackageJson/index.js` | `load(target: string): PackageJsonFile \| null`, `save(file): void` — low-level load/save for any `package.json` path. See **PackageJsonFile API** below. |
+| `PackageJsonService` | `service/PackageJson/index.js` | `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void` — low-level load/save for any `package.json` path. See **PackageJsonFile API** below. |
 | `PackageManager` | `service/PackageManager/index.js` | `install()`, `version()` — auto-detected from lock file (yarn.lock → pnpm-lock.yaml → package-lock.json); override with `--package-manager` |
 | `RegistryService` | `service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
 | `Git` | `service/Git/index.js` | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo |
-| `UpWebiny` | `tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — called by the handler after all upgrade steps to pin the final target version |
-| `PackageJsonTool` | `tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `save(file): void`. See **PackageJsonFile API** below. |
+| `UpWebiny` | `tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves. |
+| `PackageJsonTool` | `tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
 | `DependencyGuard` | `tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. The handler records each step and skips already-executed upgrades. |
 | `Responder` | `base/Responder/index.js` | `success(duration: number, message?: string): never` / `error(message: string, duration: number, error?: Error): never` — terminates the process via `logger.done()` / `logger.fatal()` + `process.exit`. Injectable; `ProcessResponder` is the real implementation. |
@@ -141,23 +141,60 @@ Short version:
 
 To ship a bugfix for an already-released upgrade (e.g. `6.1.0`), create a new upgrade with a pre-release version like `6.1.0-fix.0`. History matching is exact on `version.raw`, so `6.1.0-fix.0` will run even when `6.1.0` is already in history. The `between()` check also handles this correctly — `6.1.0-fix.0` normalises to `6.1.0` for the upper bound, and raw semver places it after `6.1.0` for the lower bound.
 
+## Testing
+
+Vitest is the test runner. Scripts:
+
+- `yarn test` — single run
+- `yarn test:watch` — watch mode
+- `yarn test:coverage` — with coverage report and threshold enforcement
+
+### Layout
+
+- **Unit tests** sit next to the source file (`Foo.ts` → `Foo.test.ts`). Use DI mocks for dependencies.
+- **Integration tests** for upgrades sit at `src/upgrades/<version>/Upgrade.integration.test.ts`. They run the real `UpgradeHandler` + `UpgradeRunner` pipeline against an on-disk fixture project copied into a tmpdir.
+- **Chained-run test** at `src/__tests__/integration/chain.test.ts` runs multiple upgrades end-to-end against the real `src/upgrades` directory. Update its assertions when a new upgrade ships.
+
+### Shared test helpers (`src/__tests__/utils/`)
+
+| Helper | Purpose |
+|---|---|
+| `createUpgradeIntegrationHarness` | Integration harness — tmpdir + real services + auto-cleanup via `vitest.onTestFinished`. Returns `{ run, readPackageJson, readFile, upWebiny, upgradeHistory, tmpDir }` |
+| `createIntegrationContainer` | `UpgradeRunner`-level test container (synthetic fixture upgrades, mocked services). Used by `UpgradeRunner.test.ts` |
+| `createMockPackageJsonFile(overrides?)` | Canonical in-memory `PackageJsonFile` with sensible defaults. **Do not duplicate per-upgrade** — pass `overrides` for customisation |
+| `createMockLogger()` | Silent `Logger.Interface` with `vi.fn()` for every level |
+| `registerUpgradeDeps(container, file)` | Registers mock `PackageJsonTool` and `ReferencesService` for upgrade unit tests |
+
+### Fixtures
+
+- Per-upgrade integration fixtures: `src/upgrades/<version>/__tests__/fixtures/before/package.json` — hand-written, minimal, self-contained (not derived from prior upgrade states).
+- Chain fixture: `src/__tests__/fixtures/chain/before/package.json`.
+- `UpgradeRunner` fixtures: `src/__tests__/fixtures/upgrades/` and `src/__tests__/fixtures/invalid-upgrades/`.
+
+### Coverage thresholds
+
+Enforced in `vitest.config.ts`: 100% statements, functions, and lines; 98% branches. Failing to meet any floor fails `yarn test:coverage`.
+
+### Global test setup
+
+`vitest.setup.ts` bumps `process.setMaxListeners(50)` to silence the pino/exit-listener warning that fires when many test files share a process.
+
 ## Post-Task Sequence
 
-After every change, run these commands in order:
+After every change, run:
 
-1. `yarn prettier:fix`
-2. `yarn eslint:fix`
-3. `yarn`
-4. `yarn build`
-5. `yarn test`
+```bash
+yarn lint:fix && yarn && yarn build && yarn test
+```
 
-If any step fails, fix the issue and restart from step 1.
+(eslint --fix → oxfmt → install → type-check → tests.) If any step fails, fix the issue and re-run the full chain.
 
 ## Rules
 
-- No `console.log` — use injected `Logger`
+- No `console.log` — use injected `Logger`. The only exception is `src/utils/userInput.ts` (runs before `Logger` is constructed); comment is in place there.
 - No direct instantiation of services — use DI
 - No exported raw interfaces — only `const` abstraction + `namespace`
 - `chalk` is installed but logging goes through `Logger` only
 - Type check: `yarn build`
+- Prefer `loadOrThrow()` over `load()` + null guard when throwing on null immediately
 - Windows compatibility: always use `path.join()` / `path.resolve()` for file paths — never string concatenation or hardcoded slashes; use `pathToFileURL()` for dynamic imports

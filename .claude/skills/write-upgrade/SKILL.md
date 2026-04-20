@@ -120,17 +120,78 @@ file.get(key: string): unknown
 file.set(key: string, value: unknown): void
 ```
 
+## Testing
+
+Every upgrade needs both a unit test and an integration test.
+
+### Unit test (`Upgrade.test.ts`)
+
+Next to `Upgrade.ts`. Mocks `PackageJsonTool` via `registerUpgradeDeps`. Uses the canonical `createMockPackageJsonFile` from `src/__tests__/utils/`. Existing examples: `src/upgrades/6.3.0/Upgrade.test.ts`.
+
+### Integration test (`Upgrade.integration.test.ts`)
+
+Next to `Upgrade.ts`. Uses the real `UpgradeHandler` + `UpgradeRunner` pipeline against a fixture `package.json` copied into a tmpdir.
+
+Layout:
+
+```
+src/upgrades/<version>/
+├── Upgrade.ts
+├── Upgrade.test.ts
+├── Upgrade.integration.test.ts
+├── __tests__/
+│   └── fixtures/
+│       └── before/
+│           └── package.json         ← hand-written, minimal, self-contained
+└── index.ts
+```
+
+Test shape:
+
+```ts
+import { describe, it, expect } from "vitest";
+import path from "node:path";
+import { createUpgradeIntegrationHarness } from "../../__tests__/utils/createUpgradeIntegrationHarness.js";
+
+const fixtureDir = path.join(import.meta.dirname, "__tests__", "fixtures", "before");
+
+describe("Upgrade 6.x.0 - integration", () => {
+    it("applies its transformations and pins @webiny/* to the target version", async () => {
+        const harness = await createUpgradeIntegrationHarness({
+            fixtureDir,
+            currentVersion: "6.(x-1).0",
+            targetVersion: "6.x.0"
+        });
+
+        await harness.run();
+
+        const pkg = harness.readPackageJson();
+        // assert upgrade-specific transformations
+        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.x.0");
+        expect(harness.upgradeHistory.list()).toContainEqual(
+            expect.objectContaining({ version: "6.x.0" })
+        );
+    });
+});
+```
+
+### Chain test
+
+After shipping a new upgrade, bump `targetVersion` and extend assertions in `src/__tests__/integration/chain.test.ts`.
+
+### Coverage
+
+Thresholds in `vitest.config.ts` enforce 100% statements / functions / lines and 98% branches. `yarn test:coverage` fails if any threshold regresses.
+
 ## Post-Task Sequence
 
-After every change, run these commands in order:
+After every change, run:
 
-1. `yarn prettier:fix`
-2. `yarn eslint:fix`
-3. `yarn`
-4. `yarn build`
-5. `yarn test`
+```bash
+yarn lint:fix && yarn && yarn build && yarn test
+```
 
-If any step fails, fix the issue and restart from step 1.
+If any step fails, fix the issue and re-run the full chain.
 
 ## Fix Upgrades
 
