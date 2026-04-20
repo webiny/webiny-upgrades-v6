@@ -17,11 +17,7 @@ class PnpmImpl implements PackageManagerAbstraction.Interface {
 
     public async version(): Promise<Version> {
         const { stdout } = await execa("pnpm", ["--version"]);
-        const result = Version.parse(stdout.trim());
-        if (!result) {
-            throw new Error(`Failed to parse pnpm version: ${stdout.trim()}`);
-        }
-        return result;
+        return Version.create(stdout.trim());
     }
 }
 

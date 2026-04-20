@@ -5,6 +5,7 @@ import { YarnPackageManager } from "./YarnPackageManager.js";
 import { PnpmPackageManager } from "./PnpmPackageManager.js";
 import { NpmPackageManager } from "./NpmPackageManager.js";
 import { detectPackageManager } from "./detect.js";
+import { InvalidSemverError } from "../../base/Version/index.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
@@ -95,7 +96,7 @@ describe("YarnPackageManager", () => {
     it("version throws when output is not valid semver", async () => {
         (execa as any).mockResolvedValue({ stdout: "not-a-version" });
         const pm = createContainer(YarnPackageManager).resolve(PackageManager);
-        await expect(pm.version()).rejects.toThrow("Failed to parse yarn version");
+        await expect(pm.version()).rejects.toThrow(InvalidSemverError);
     });
 });
 
@@ -127,7 +128,7 @@ describe("PnpmPackageManager", () => {
     it("version throws when output is not valid semver", async () => {
         (execa as any).mockResolvedValue({ stdout: "bad" });
         const pm = createContainer(PnpmPackageManager).resolve(PackageManager);
-        await expect(pm.version()).rejects.toThrow("Failed to parse pnpm version");
+        await expect(pm.version()).rejects.toThrow(InvalidSemverError);
     });
 });
 
@@ -159,6 +160,6 @@ describe("NpmPackageManager", () => {
     it("version throws when output is not valid semver", async () => {
         (execa as any).mockResolvedValue({ stdout: "bad" });
         const pm = createContainer(NpmPackageManager).resolve(PackageManager);
-        await expect(pm.version()).rejects.toThrow("Failed to parse npm version");
+        await expect(pm.version()).rejects.toThrow(InvalidSemverError);
     });
 });

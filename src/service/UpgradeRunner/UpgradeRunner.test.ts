@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import path from "node:path";
 import { UpgradeRunner } from "./abstraction.js";
 import { createIntegrationContainer } from "../../__tests__/utils/createIntegrationContainer.js";
-import { Version } from "../../base/Version/index.js";
+import { InvalidSemverError, Version } from "../../base/Version/index.js";
 
 const v = (version: string) => Version.create(version);
 
@@ -118,7 +118,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "is not a valid semver version"
+                InvalidSemverError
             );
         });
 

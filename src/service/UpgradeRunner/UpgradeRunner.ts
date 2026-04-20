@@ -45,15 +45,7 @@ class UpgradeRunnerImpl implements UpgradeRunnerAbstraction.Interface {
         }
 
         const sorted = directories
-            .map(entry => {
-                const parsed = Version.parse(entry.name);
-                if (!parsed) {
-                    throw new Error(
-                        `Upgrade directory "${entry.name}" is not a valid semver version.`
-                    );
-                }
-                return { parsed, name: entry.name };
-            })
+            .map(entry => ({ parsed: Version.create(entry.name), name: entry.name }))
             .sort((a, b) => a.parsed.compareTo(b.parsed));
 
         for (const { name } of sorted) {
