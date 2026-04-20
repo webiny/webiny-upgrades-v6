@@ -90,7 +90,7 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
         const installVersion = this.input.installVersion
             ? Version.create(this.input.installVersion)
             : params.version;
-        await this.upWebiny.execute({ version: installVersion });
+        this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
     }
 }

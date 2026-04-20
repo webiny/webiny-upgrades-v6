@@ -29,7 +29,7 @@ describe("UpWebiny", () => {
     describe("execute", () => {
         it("throws when package.json cannot be loaded", async () => {
             const tool = createContainer(null).resolve(UpWebiny);
-            await expect(tool.execute({ version: v("6.1.0") })).rejects.toThrow(
+            expect(() => tool.execute({ version: v("6.1.0") })).toThrow(
                 "Failed to load package.json"
             );
         });
@@ -39,7 +39,7 @@ describe("UpWebiny", () => {
                 devDependencies: { webiny: "6.0.0" }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("webiny")).toBe("6.1.0");
             expect(file.getDevDependency("webiny")).toBeNull();
         });
@@ -52,7 +52,7 @@ describe("UpWebiny", () => {
                 }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("@webiny/cli")).toBe("6.1.0");
             expect(file.getDependency("lodash")).toBe("4.17.21");
         });
@@ -65,7 +65,7 @@ describe("UpWebiny", () => {
                 }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("@webiny/app-serverless-cms")).toBe("6.1.0");
             expect(file.getDevDependency("@webiny/app-serverless-cms")).toBeNull();
             expect(file.getDevDependency("vitest")).toBe("4.0.0");
@@ -78,7 +78,7 @@ describe("UpWebiny", () => {
                 }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("@webiny/react")).toBe("6.1.0");
             expect(file.getPeerDependency("@webiny/react")).toBeNull();
         });
@@ -90,7 +90,7 @@ describe("UpWebiny", () => {
                 }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getResolution("@webiny/cli")).toBe("6.1.0");
         });
 
@@ -99,7 +99,7 @@ describe("UpWebiny", () => {
                 devDependencies: { "@webiny/cognito": "6.0.0" }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
             expect(file.getDevDependency("@webiny/cognito")).toBeNull();
         });
@@ -109,7 +109,7 @@ describe("UpWebiny", () => {
                 dependencies: { "@webiny/cognito": "6.0.0" }
             });
             const tool = createContainer(file).resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
         });
 
@@ -118,7 +118,7 @@ describe("UpWebiny", () => {
             const container = createContainer(file);
             const packageJsonTool = container.resolve(PackageJsonTool);
             const tool = container.resolve(UpWebiny);
-            await tool.execute({ version: v("6.1.0") });
+            tool.execute({ version: v("6.1.0") });
             expect(packageJsonTool.save).toHaveBeenCalledWith(file);
         });
     });

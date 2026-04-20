@@ -50,7 +50,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         // IMPORTANT: always pass this.version — never a hardcoded version string.
         // The user may run the upgrade with a pre-release like 6.2.0-beta.0,
         // and this.version resolves to the correct value.
-        await this.upWebiny.execute({ version: this.version });
+        this.upWebiny.execute({ version: this.version });
 
         const packageJson = this.packageJsonTool.loadOrThrow();
         // Version-specific transformations go here.
@@ -149,7 +149,7 @@ To ship a bugfix for an already-released upgrade (e.g. `6.1.0`), create a new up
 ## Rules
 
 - `canHandle` must return `this.version.between(currentVersion, targetVersion)` — this upgrade's hardcoded version must fall in the range
-- Always call `await this.upWebiny.execute({ version: this.version })` in `execute` — pass `this.version`, **never** a hardcoded version string (the user may target a pre-release like `6.3.0-beta.0`)
+- Always call `this.upWebiny.execute({ version: this.version })` in `execute` — pass `this.version`, **never** a hardcoded version string (the user may target a pre-release like `6.3.0-beta.0`)
 - Never check the npm registry in `canHandle` or `execute` — the version does not exist yet
 - Always inject dependencies, never instantiate services directly
 - Use relative imports, not `~/`

@@ -8,7 +8,7 @@ const isWebinyUpgradeable = (dep: string): boolean => {
 class UpWebinyImpl implements UpWebinyAbstraction.Interface {
     public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
 
-    public async execute(params: UpWebinyAbstraction.Params): Promise<void> {
+    public execute(params: UpWebinyAbstraction.Params): void {
         const { version } = params;
 
         const packageJson = this.packageJsonTool.loadOrThrow();

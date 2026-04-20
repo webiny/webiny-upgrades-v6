@@ -6,7 +6,7 @@ interface IUpWebinyParams {
 }
 
 interface IUpWebiny {
-    execute(params: IUpWebinyParams): Promise<void>;
+    execute(params: IUpWebinyParams): void;
 }
 
 export const UpWebiny = createAbstraction<IUpWebiny>("Tool/UpWebiny");

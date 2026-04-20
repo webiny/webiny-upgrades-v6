@@ -19,7 +19,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     }
 
     public async execute(): Promise<void> {
-        await this.upWebiny.execute({ version: this.version });
+        this.upWebiny.execute({ version: this.version });
         const packageJson = this.packageJsonTool.loadOrThrow();
         packageJson.setDevDependency("typescript", "6.0.3");
 
