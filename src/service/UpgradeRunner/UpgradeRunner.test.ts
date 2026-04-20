@@ -3,6 +3,10 @@ import path from "node:path";
 import { UpgradeRunner } from "./abstraction.js";
 import { createIntegrationContainer } from "../../__tests__/utils/createIntegrationContainer.js";
 import { InvalidSemverError, Version } from "../../base/Version/index.js";
+import { UpgradeFeatureExportError } from "./UpgradeFeatureExportError.js";
+import { UpgradeIndexMissingError } from "./UpgradeIndexMissingError.js";
+import { UpgradesDirectoryEmptyError } from "./UpgradesDirectoryEmptyError.js";
+import { UpgradesDirectoryNotFoundError } from "./UpgradesDirectoryNotFoundError.js";
 
 const v = (version: string) => Version.create(version);
 
@@ -94,7 +98,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "Upgrades directory does not exist"
+                UpgradesDirectoryNotFoundError
             );
         });
 
@@ -106,7 +110,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "No upgrade scripts found"
+                UpgradesDirectoryEmptyError
             );
         });
 
@@ -130,7 +134,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "is missing an index.ts file"
+                UpgradeIndexMissingError
             );
         });
 
@@ -142,7 +146,7 @@ describe("UpgradeRunner", () => {
             });
 
             await expect(container.resolve(UpgradeRunner).run()).rejects.toThrow(
-                "does not export a valid feature"
+                UpgradeFeatureExportError
             );
         });
     });
