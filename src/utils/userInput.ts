@@ -7,10 +7,9 @@ const DEFAULT_REGISTRY = "https://registry.npmjs.org";
 const schema = zod
     .object({
         _: zod
-            .tuple([zod.string().optional()])
-            .transform(input => input[0] ?? "latest")
-            .optional()
-            .default("latest"),
+            .array(zod.string())
+            .max(1)
+            .transform(input => input[0] ?? "latest"),
         cwd: zod.string().optional(),
         logLevel: zod.enum(["debug", "info", "warn", "error"]).default("error"),
         json: zod.boolean(),
