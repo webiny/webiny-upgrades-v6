@@ -65,20 +65,10 @@ describe("YarnPackageManager", () => {
     it("install runs yarn with no args", async () => {
         (execa as any).mockResolvedValue({});
         await createContainer(YarnPackageManager).resolve(PackageManager).install();
-        expect(execa).toHaveBeenCalledWith("yarn", [], { stdio: "pipe" });
+        expect(execa).toHaveBeenCalledWith("yarn", [], { stdio: "inherit" });
     });
 
-    it("install logs stderr and rethrows on failure", async () => {
-        (execa as any).mockRejectedValue({ stderr: "yarn error output" });
-        const container = createContainer(YarnPackageManager);
-        const logger = container.resolve(Logger);
-        const pm = container.resolve(PackageManager);
-
-        await expect(pm.install()).rejects.toEqual({ stderr: "yarn error output" });
-        expect(logger.error).toHaveBeenCalledWith("yarn error output");
-    });
-
-    it("install logs message when stderr is empty", async () => {
+    it("install logs message and rethrows on failure", async () => {
         (execa as any).mockRejectedValue({ message: "command failed" });
         const container = createContainer(YarnPackageManager);
         const logger = container.resolve(Logger);
@@ -107,17 +97,17 @@ describe("PnpmPackageManager", () => {
     it("install runs pnpm install", async () => {
         (execa as any).mockResolvedValue({});
         await createContainer(PnpmPackageManager).resolve(PackageManager).install();
-        expect(execa).toHaveBeenCalledWith("pnpm", ["install"], { stdio: "pipe" });
+        expect(execa).toHaveBeenCalledWith("pnpm", ["install"], { stdio: "inherit" });
     });
 
-    it("install logs stderr and rethrows on failure", async () => {
-        (execa as any).mockRejectedValue({ stderr: "pnpm error" });
+    it("install logs message and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ message: "pnpm failed" });
         const container = createContainer(PnpmPackageManager);
         const logger = container.resolve(Logger);
         const pm = container.resolve(PackageManager);
 
-        await expect(pm.install()).rejects.toEqual({ stderr: "pnpm error" });
-        expect(logger.error).toHaveBeenCalledWith("pnpm error");
+        await expect(pm.install()).rejects.toEqual({ message: "pnpm failed" });
+        expect(logger.error).toHaveBeenCalledWith("pnpm failed");
     });
 
     it("version runs pnpm --version and parses result", async () => {
@@ -139,17 +129,17 @@ describe("NpmPackageManager", () => {
     it("install runs npm install", async () => {
         (execa as any).mockResolvedValue({});
         await createContainer(NpmPackageManager).resolve(PackageManager).install();
-        expect(execa).toHaveBeenCalledWith("npm", ["install"], { stdio: "pipe" });
+        expect(execa).toHaveBeenCalledWith("npm", ["install"], { stdio: "inherit" });
     });
 
-    it("install logs stderr and rethrows on failure", async () => {
-        (execa as any).mockRejectedValue({ stderr: "npm error" });
+    it("install logs message and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ message: "npm failed" });
         const container = createContainer(NpmPackageManager);
         const logger = container.resolve(Logger);
         const pm = container.resolve(PackageManager);
 
-        await expect(pm.install()).rejects.toEqual({ stderr: "npm error" });
-        expect(logger.error).toHaveBeenCalledWith("npm error");
+        await expect(pm.install()).rejects.toEqual({ message: "npm failed" });
+        expect(logger.error).toHaveBeenCalledWith("npm failed");
     });
 
     it("version runs npm --version and parses result", async () => {
