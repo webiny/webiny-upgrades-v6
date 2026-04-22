@@ -8,9 +8,9 @@ class NpmImpl implements PackageManagerAbstraction.Interface {
 
     public async install(): Promise<void> {
         try {
-            await execa("npm", ["install"], { stdio: "pipe" });
+            await execa("npm", ["install"], { stdio: "inherit" });
         } catch (ex: any) {
-            this.logger.error(ex.stderr || ex.message);
+            this.logger.error(ex.message);
             throw ex;
         }
     }

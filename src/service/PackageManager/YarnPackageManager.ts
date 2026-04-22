@@ -8,9 +8,9 @@ class YarnImpl implements PackageManagerAbstraction.Interface {
 
     public async install(): Promise<void> {
         try {
-            await execa("yarn", [], { stdio: "pipe" });
+            await execa("yarn", [], { stdio: "inherit" });
         } catch (ex: any) {
-            this.logger.error(ex.stderr || ex.message);
+            this.logger.error(ex.message);
             throw ex;
         }
     }

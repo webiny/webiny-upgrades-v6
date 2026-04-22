@@ -8,9 +8,9 @@ class PnpmImpl implements PackageManagerAbstraction.Interface {
 
     public async install(): Promise<void> {
         try {
-            await execa("pnpm", ["install"], { stdio: "pipe" });
+            await execa("pnpm", ["install"], { stdio: "inherit" });
         } catch (ex: any) {
-            this.logger.error(ex.stderr || ex.message);
+            this.logger.error(ex.message);
             throw ex;
         }
     }
