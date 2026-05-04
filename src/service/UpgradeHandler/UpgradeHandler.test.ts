@@ -74,7 +74,8 @@ const createContainer = (
     container.registerInstance(Git, git);
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),
-        version: vi.fn()
+        version: vi.fn(),
+        name: vi.fn().mockReturnValue("yarn")
     });
     container.registerInstance(UpWebiny, createMockUpWebiny());
     container.registerInstance(Input, {

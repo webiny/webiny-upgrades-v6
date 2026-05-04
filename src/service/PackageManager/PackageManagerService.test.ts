@@ -3,7 +3,8 @@ import { Container } from "@webiny/di";
 import { PackageManagerService } from "./PackageManagerService.js";
 import {
     PackageManagerService as PackageManagerServiceToken,
-    PackageManager
+    PackageManager,
+    PackageManagerName
 } from "./abstraction.js";
 import { Timer } from "../../base/Timer/abstraction.js";
 import { Logger } from "../../base/Logger/abstraction.js";
@@ -29,6 +30,8 @@ const createContainer = () => {
 
     const logger = createMockLogger();
     container.registerInstance(Logger, logger);
+
+    container.registerInstance(PackageManagerName, "yarn" as const);
 
     container.register(PackageManagerService);
 
@@ -85,6 +88,15 @@ describe("PackageManagerService", () => {
             await service.version();
 
             expect(packageManager.version).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe("name", () => {
+        it("returns the detected package manager name", () => {
+            const { container } = createContainer();
+            const service = container.resolve(PackageManagerServiceToken);
+
+            expect(service.name()).toBe("yarn");
         });
     });
 });

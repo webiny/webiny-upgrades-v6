@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { mkdtemp, cp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -11,6 +11,7 @@ import { Logger } from "../../base/Logger/abstraction.js";
 import { Version } from "../../base/Version/index.js";
 import { Git } from "../../service/Git/abstraction.js";
 import { PackageManagerService } from "../../service/PackageManager/abstraction.js";
+import type { PackageManagerName as IPackageManagerName } from "../../service/PackageManager/detect.js";
 import { RegistryService } from "../../service/Registry/abstraction.js";
 import { ReferencesService } from "../../service/References/abstractions.js";
 import { PackageJsonService as PackageJsonServiceImpl } from "../../service/PackageJson/PackageJsonService.js";
@@ -54,6 +55,12 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
         await rm(tmpDir, { recursive: true, force: true });
     });
 
+    const detectedPackageManager: IPackageManagerName = existsSync(path.join(tmpDir, "yarn.lock"))
+        ? "yarn"
+        : existsSync(path.join(tmpDir, "pnpm-lock.yaml"))
+          ? "pnpm"
+          : "npm";
+
     const container = new DIContainer();
     container.registerInstance(Container, container);
 
@@ -93,7 +100,8 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
 
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),
-        version: vi.fn()
+        version: vi.fn(),
+        name: vi.fn().mockReturnValue(detectedPackageManager)
     });
 
     container.registerInstance(RegistryService, {
