@@ -26,6 +26,8 @@ const BIN_DIR = path.join(
     "SetupYarn",
     "binaries"
 );
+const RELEASES_DIR = path.join(CWD, ".yarn", "releases");
+const YARNRC_PATH = path.join(CWD, ".yarnrc.yml");
 
 const v = (version: string) => Version.create(version);
 
@@ -122,7 +124,9 @@ describe("Upgrade 6.3.0 - execute", () => {
     });
 
     it("updates packageManager when binary is found in the binaries directory", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
+        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+            (p: unknown) => p === BIN_DIR
+        );
         (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
 
         const file = createMockPackageJsonFile();
@@ -131,6 +135,72 @@ describe("Upgrade 6.3.0 - execute", () => {
         await upgrade.execute();
 
         expect(file.get("packageManager")).toBe("yarn@4.9.1");
+    });
+
+    it("copies yarn binary to .yarn/releases/ when directory exists", async () => {
+        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+            (p: unknown) => p === BIN_DIR || p === RELEASES_DIR
+        );
+        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
+
+        const file = createMockPackageJsonFile();
+        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(fs.copyFileSync).toHaveBeenCalledWith(
+            path.join(BIN_DIR, "yarn-4.9.1.cjs"),
+            path.join(RELEASES_DIR, "yarn-4.9.1.cjs")
+        );
+    });
+
+    it("skips copying yarn binary when .yarn/releases/ does not exist", async () => {
+        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+            (p: unknown) => p === BIN_DIR
+        );
+        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
+
+        const file = createMockPackageJsonFile();
+        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(fs.copyFileSync).not.toHaveBeenCalled();
+    });
+
+    it("updates yarnPath in .yarnrc.yml when file exists", async () => {
+        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+            (p: unknown) => p === BIN_DIR || p === YARNRC_PATH
+        );
+        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
+        (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
+            "yarnPath: .yarn/releases/yarn-4.10.0.cjs\n"
+        );
+
+        const file = createMockPackageJsonFile();
+        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(fs.writeFileSync).toHaveBeenCalledWith(
+            YARNRC_PATH,
+            "yarnPath: .yarn/releases/yarn-4.9.1.cjs\n",
+            "utf-8"
+        );
+    });
+
+    it("skips updating .yarnrc.yml when file does not exist", async () => {
+        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
+            (p: unknown) => p === BIN_DIR
+        );
+        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
+
+        const file = createMockPackageJsonFile();
+        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(fs.writeFileSync).not.toHaveBeenCalled();
     });
 
     it("skips packageManager update when project is not yarn", async () => {

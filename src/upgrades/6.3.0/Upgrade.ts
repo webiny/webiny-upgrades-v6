@@ -6,6 +6,11 @@ import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { PackageManagerService } from "../../service/PackageManager/index.js";
 import { Version } from "../../base/Version/index.js";
 
+interface YarnBinaryInfo {
+    version: string;
+    srcPath: string;
+}
+
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.3.0");
 
@@ -22,7 +27,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         return this.version.between(currentVersion, targetVersion);
     }
 
-    private getYarnVersion(): string | null {
+    private getYarnBinaryInfo(): YarnBinaryInfo | null {
         const binDir = this.context.resolve(
             "node_modules",
             "@webiny",
@@ -41,7 +46,32 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
             return null;
         }
 
-        return path.basename(String(match), ".cjs").slice("yarn-".length);
+        const filename = String(match);
+        return {
+            version: path.basename(filename, ".cjs").slice("yarn-".length),
+            srcPath: path.join(binDir, filename)
+        };
+    }
+
+    private copyYarnBinary(version: string, srcPath: string): void {
+        const releasesDir = this.context.resolve(".yarn", "releases");
+        if (!fs.existsSync(releasesDir)) {
+            return;
+        }
+        fs.copyFileSync(srcPath, path.join(releasesDir, `yarn-${version}.cjs`));
+    }
+
+    private updateYarnrc(version: string): void {
+        const yarnrcPath = this.context.resolve(".yarnrc.yml");
+        if (!fs.existsSync(yarnrcPath)) {
+            return;
+        }
+        const content = fs.readFileSync(yarnrcPath, "utf-8");
+        const updated = content.replace(
+            /^yarnPath:.*$/m,
+            `yarnPath: .yarn/releases/yarn-${version}.cjs`
+        );
+        fs.writeFileSync(yarnrcPath, updated, "utf-8");
     }
 
     public async execute(): Promise<void> {
@@ -49,9 +79,11 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         packageJson.setDevDependency("typescript", "6.0.3");
 
         if (this.packageManagerService.name() === "yarn") {
-            const yarnVersion = this.getYarnVersion();
-            if (yarnVersion) {
-                packageJson.set("packageManager", `yarn@${yarnVersion}`);
+            const info = this.getYarnBinaryInfo();
+            if (info) {
+                packageJson.set("packageManager", `yarn@${info.version}`);
+                this.copyYarnBinary(info.version, info.srcPath);
+                this.updateYarnrc(info.version);
             }
         }
 

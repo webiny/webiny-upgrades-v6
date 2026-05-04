@@ -36,6 +36,13 @@ describe("Upgrade 6.3.0 - integration", () => {
         expect(pkg.dependencies?.webiny).toBe("6.3.0");
         expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.3.0");
 
+        expect(
+            fs.existsSync(path.join(harness.tmpDir, ".yarn", "releases", "yarn-4.9.1.cjs"))
+        ).toBe(true);
+        expect(harness.readFile(".yarnrc.yml")).toContain(
+            "yarnPath: .yarn/releases/yarn-4.9.1.cjs"
+        );
+
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.3.0" })
         );
