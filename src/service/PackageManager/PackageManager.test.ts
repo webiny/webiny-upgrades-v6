@@ -8,6 +8,7 @@ import { detectPackageManager } from "./detect.js";
 import { PackageManagerDetectionError } from "./PackageManagerDetectionError.js";
 import { InvalidSemverError } from "../../base/Version/index.js";
 import { Logger } from "../../base/Logger/abstraction.js";
+import { Context } from "../../base/Context/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
 vi.mock("execa", () => ({ execa: vi.fn() }));
@@ -19,6 +20,7 @@ import fs from "node:fs";
 const createContainer = (Implementation: any) => {
     const container = new Container();
     container.registerInstance(Logger, createMockLogger());
+    container.registerInstance(Context, { cwd: "/project" } as Context.Interface);
     container.register(Implementation);
     return container;
 };
@@ -62,13 +64,33 @@ describe("detectPackageManager", () => {
 describe("YarnPackageManager", () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it("install runs yarn with no args", async () => {
+    it("install runs yarn with no args when .yarnrc.yml is absent", async () => {
+        (fs.existsSync as any).mockReturnValue(false);
+        (execa as any).mockResolvedValue({});
+        await createContainer(YarnPackageManager).resolve(PackageManager).install();
+        expect(execa).toHaveBeenCalledWith("yarn", [], { stdio: "inherit" });
+    });
+
+    it("install runs node with the resolved yarnPath when .yarnrc.yml specifies yarnPath", async () => {
+        (fs.existsSync as any).mockReturnValue(true);
+        (fs.readFileSync as any).mockReturnValue("yarnPath: .yarn/releases/yarn-4.14.1.cjs\n");
+        (execa as any).mockResolvedValue({});
+        await createContainer(YarnPackageManager).resolve(PackageManager).install();
+        expect(execa).toHaveBeenCalledWith("node", ["/project/.yarn/releases/yarn-4.14.1.cjs"], {
+            stdio: "inherit"
+        });
+    });
+
+    it("install falls back to yarn when .yarnrc.yml has no yarnPath entry", async () => {
+        (fs.existsSync as any).mockReturnValue(true);
+        (fs.readFileSync as any).mockReturnValue("nodeLinker: node-modules\n");
         (execa as any).mockResolvedValue({});
         await createContainer(YarnPackageManager).resolve(PackageManager).install();
         expect(execa).toHaveBeenCalledWith("yarn", [], { stdio: "inherit" });
     });
 
     it("install logs message and rethrows on failure", async () => {
+        (fs.existsSync as any).mockReturnValue(false);
         (execa as any).mockRejectedValue({ message: "command failed" });
         const container = createContainer(YarnPackageManager);
         const logger = container.resolve(Logger);
