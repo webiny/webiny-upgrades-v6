@@ -120,7 +120,11 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
                 );
                 writeFileSync(yarnrcPath, updated, "utf-8");
             } else {
-                writeFileSync(yarnrcPath, `yarnPath: .yarn/releases/yarn-${version}.cjs\n`, "utf-8");
+                writeFileSync(
+                    yarnrcPath,
+                    `yarnPath: .yarn/releases/yarn-${version}.cjs\n`,
+                    "utf-8"
+                );
             }
 
             writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2), "utf-8");

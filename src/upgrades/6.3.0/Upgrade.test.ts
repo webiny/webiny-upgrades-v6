@@ -68,9 +68,21 @@ describe("Upgrade 6.3.0 - canHandle", () => {
         expect(await upgrade.canHandle(params("6.3.0-alpha.1", "6.2.0"))).toBe(true);
     });
 
-    it("returns true when current is a pre-release of 6.3.0 (raw: release > pre-release)", async () => {
+    it("returns true when current is a pre-release of 6.3.0 and target is above 6.3.0", async () => {
         expect(await upgrade.canHandle(params("6.4.0", "6.3.0-beta.0"))).toBe(true);
         expect(await upgrade.canHandle(params("6.4.0", "6.3.0-local-npm.11"))).toBe(true);
+    });
+
+    it("returns true when current and target are both pre-releases of 6.3.0", async () => {
+        expect(await upgrade.canHandle(params("6.3.0-beta.3", "6.3.0-beta.0"))).toBe(true);
+        expect(await upgrade.canHandle(params("6.3.0-beta.3", "6.3.0-beta.1"))).toBe(true);
+        expect(await upgrade.canHandle(params("6.3.0-beta.3", "6.3.0-local-npm.11"))).toBe(true);
+    });
+
+    it("returns true when current is a pre-release of 6.3.0 and target is 6.3.0", async () => {
+        expect(await upgrade.canHandle(params("6.3.0", "6.3.0-beta.0"))).toBe(true);
+        expect(await upgrade.canHandle(params("6.3.0", "6.3.0-beta.1"))).toBe(true);
+        expect(await upgrade.canHandle(params("6.3.0", "6.3.0-local-npm.11"))).toBe(true);
     });
 });
 

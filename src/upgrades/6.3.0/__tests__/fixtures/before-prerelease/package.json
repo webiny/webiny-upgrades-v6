@@ -1,0 +1,13 @@
+{
+    "name": "my-app",
+    "version": "1.0.0",
+    "packageManager": "yarn@4.10.0",
+    "dependencies": {
+        "webiny": "6.3.0-beta.1",
+        "@webiny/cli": "6.3.0-beta.1",
+        "@webiny/mcp": "6.3.0-beta.1"
+    },
+    "devDependencies": {
+        "typescript": "5.0.0"
+    }
+}

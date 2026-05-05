@@ -5,6 +5,12 @@ import { createUpgradeIntegrationHarness } from "../../__tests__/utils/createUpg
 
 const fixtureDir = path.join(import.meta.dirname, "__tests__", "fixtures", "before");
 const fixtureNoYarnDir = path.join(import.meta.dirname, "__tests__", "fixtures", "before-no-yarn");
+const fixturePreReleaseDir = path.join(
+    import.meta.dirname,
+    "__tests__",
+    "fixtures",
+    "before-prerelease"
+);
 
 describe("Upgrade 6.3.0 - integration", () => {
     it("sets typescript devDependency to 6.0.3, updates yarn version, and pins @webiny/* to 6.3.0", async () => {
@@ -50,6 +56,27 @@ describe("Upgrade 6.3.0 - integration", () => {
         expect(pkg.devDependencies?.typescript).toBe("6.0.3");
         expect(pkg.packageManager).toBeUndefined();
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.3.0");
+
+        expect(harness.upgradeHistory.list()).toContainEqual(
+            expect.objectContaining({ version: "6.3.0" })
+        );
+    });
+
+    it("runs when current version is a 6.3.0 pre-release and target is a later 6.3.0 pre-release", async () => {
+        const harness = await createUpgradeIntegrationHarness({
+            fixtureDir: fixturePreReleaseDir,
+            currentVersion: "6.3.0-beta.1",
+            targetVersion: "6.3.0-beta.3"
+        });
+
+        await harness.run();
+
+        const pkg = harness.readPackageJson();
+
+        expect(pkg.devDependencies?.typescript).toBe("6.0.3");
+        expect(pkg.packageManager).toBe("yarn@4.14.1");
+        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.3.0-beta.3");
+        expect(pkg.dependencies?.webiny).toBe("6.3.0-beta.3");
 
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.3.0" })

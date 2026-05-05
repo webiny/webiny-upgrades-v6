@@ -17,21 +17,14 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     }: UpgradeAbstraction.Params): Promise<boolean> {
         return this.version.between(currentVersion, targetVersion);
     }
-    
 
     public async execute(): Promise<void> {
-        /**
-         * First update the package.json file as it will just store new versions.
-         */
         const packageJson = this.packageJsonTool.loadOrThrow();
         packageJson.setDevDependency("typescript", "6.0.3");
         this.packageJsonTool.save(packageJson);
-        /**
-         * Then we update yarn as it will run yarn install.
-         */
-        // if (this.packageManagerService.name() === "yarn") {
-        //     await this.packageManagerService.update("4.14.1");
-        // }
+        if (this.packageManagerService.name() === "yarn") {
+            await this.packageManagerService.update("4.14.1");
+        }
     }
 }
 
