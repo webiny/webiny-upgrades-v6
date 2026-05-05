@@ -101,7 +101,8 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),
         version: vi.fn(),
-        name: vi.fn().mockReturnValue(detectedPackageManager)
+        name: vi.fn().mockReturnValue(detectedPackageManager),
+        update: vi.fn().mockResolvedValue(undefined)
     });
 
     container.registerInstance(RegistryService, {

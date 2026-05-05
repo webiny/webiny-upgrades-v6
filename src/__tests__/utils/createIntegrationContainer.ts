@@ -56,7 +56,8 @@ export const createIntegrationContainer = ({
     const yarn: PackageManagerService.Interface = {
         install: vi.fn().mockResolvedValue(undefined),
         version: vi.fn(),
-        name: vi.fn().mockReturnValue("yarn")
+        name: vi.fn().mockReturnValue("yarn"),
+        update: vi.fn().mockResolvedValue(undefined)
     };
     container.registerInstance(PackageManagerService, yarn);
 

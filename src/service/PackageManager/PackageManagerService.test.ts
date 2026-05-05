@@ -16,7 +16,8 @@ const createContainer = () => {
 
     const packageManager: PackageManager.Interface = {
         install: vi.fn().mockResolvedValue(undefined),
-        version: vi.fn().mockResolvedValue(Version.create("4.1.0"))
+        version: vi.fn().mockResolvedValue(Version.create("4.1.0")),
+        update: vi.fn().mockResolvedValue(undefined)
     };
     container.registerInstance(PackageManager, packageManager);
 
@@ -97,6 +98,38 @@ describe("PackageManagerService", () => {
             const service = container.resolve(PackageManagerServiceToken);
 
             expect(service.name()).toBe("yarn");
+        });
+    });
+
+    describe("update", () => {
+        it("delegates to packageManager.update with the given version", async () => {
+            const { container, packageManager } = createContainer();
+            const service = container.resolve(PackageManagerServiceToken);
+
+            await service.update("4.14.1");
+
+            expect(packageManager.update).toHaveBeenCalledWith("4.14.1");
+        });
+
+        it("logs before updating", async () => {
+            const { container, logger } = createContainer();
+            const service = container.resolve(PackageManagerServiceToken);
+
+            await service.update("4.14.1");
+
+            expect(logger.info).toHaveBeenCalledWith("Updating package manager...");
+        });
+
+        it("wraps update in a timer", async () => {
+            const { container, timer } = createContainer();
+            const service = container.resolve(PackageManagerServiceToken);
+
+            await service.update("4.14.1");
+
+            expect(timer.execute).toHaveBeenCalledWith(
+                "PackageManagerService.update",
+                expect.any(Function)
+            );
         });
     });
 });

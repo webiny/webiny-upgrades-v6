@@ -45,7 +45,8 @@ const createContainer = (
     container.registerInstance(PackageManagerService, {
         install: vi.fn(),
         version: vi.fn(),
-        name: vi.fn().mockReturnValue(pmName)
+        name: vi.fn().mockReturnValue(pmName),
+        update: vi.fn().mockResolvedValue(undefined)
     });
     container.register(Upgrade630);
     return container;

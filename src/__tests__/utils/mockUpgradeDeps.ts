@@ -38,7 +38,8 @@ export const registerUpgradeDeps = (
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),
         version: vi.fn(),
-        name: vi.fn().mockReturnValue("yarn")
+        name: vi.fn().mockReturnValue("yarn"),
+        update: vi.fn().mockResolvedValue(undefined)
     });
     container.registerInstance(Context, {
         cwd: MOCK_CWD,

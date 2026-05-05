@@ -29,6 +29,13 @@ class PackageManagerServiceImpl implements PackageManagerServiceAbstraction.Inte
     public name(): IPackageManagerName {
         return this.pmName;
     }
+
+    public async update(version: string): PackageManagerServiceAbstraction.UpdateResponse {
+        this.logger.info("Updating package manager...");
+        await this.timer.execute("PackageManagerService.update", async () => {
+            return await this.packageManager.update(version);
+        });
+    }
 }
 
 export const PackageManagerService = PackageManagerServiceAbstraction.createImplementation({
