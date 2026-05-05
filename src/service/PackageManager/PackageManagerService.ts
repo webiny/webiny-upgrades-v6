@@ -1,7 +1,9 @@
 import {
     PackageManagerService as PackageManagerServiceAbstraction,
-    PackageManager
+    PackageManager,
+    PackageManagerName
 } from "./abstraction.js";
+import type { PackageManagerName as IPackageManagerName } from "./detect.js";
 import { Timer } from "../../base/Timer/index.js";
 import { Logger } from "../../base/Logger/index.js";
 
@@ -9,7 +11,8 @@ class PackageManagerServiceImpl implements PackageManagerServiceAbstraction.Inte
     constructor(
         private readonly packageManager: PackageManager.Interface,
         private readonly timer: Timer.Interface,
-        private readonly logger: Logger.Interface
+        private readonly logger: Logger.Interface,
+        private readonly pmName: IPackageManagerName
     ) {}
 
     public async install(): PackageManagerServiceAbstraction.InstallResponse {
@@ -22,9 +25,20 @@ class PackageManagerServiceImpl implements PackageManagerServiceAbstraction.Inte
     public async version(): PackageManagerServiceAbstraction.VersionResponse {
         return await this.packageManager.version();
     }
+
+    public name(): IPackageManagerName {
+        return this.pmName;
+    }
+
+    public async update(version: string): PackageManagerServiceAbstraction.UpdateResponse {
+        this.logger.info("Updating package manager...");
+        await this.timer.execute("PackageManagerService.update", async () => {
+            return await this.packageManager.update(version);
+        });
+    }
 }
 
 export const PackageManagerService = PackageManagerServiceAbstraction.createImplementation({
     implementation: PackageManagerServiceImpl,
-    dependencies: [PackageManager, Timer, Logger]
+    dependencies: [PackageManager, Timer, Logger, PackageManagerName]
 });

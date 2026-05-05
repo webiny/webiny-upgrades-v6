@@ -1,13 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Container } from "@webiny/di";
 import { Upgrade as Upgrade630 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { PackageManagerService } from "../../service/PackageManager/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
+import type { PackageManagerName } from "../../service/PackageManager/detect.js";
 
 const v = (version: string) => Version.create(version);
 
@@ -16,9 +18,18 @@ const params = (target: string, current: string) => ({
     currentVersion: v(current)
 });
 
-const createContainer = (file: PackageJsonFile.Interface | null = createMockPackageJsonFile()) => {
+const createContainer = (
+    file: PackageJsonFile.Interface | null = createMockPackageJsonFile(),
+    pmName: PackageManagerName = "yarn"
+) => {
     const container = new Container();
     registerUpgradeDeps(container, file);
+    container.registerInstance(PackageManagerService, {
+        install: vi.fn(),
+        version: vi.fn(),
+        name: vi.fn().mockReturnValue(pmName),
+        update: vi.fn().mockResolvedValue(undefined)
+    });
     container.register(Upgrade630);
     return container;
 };
@@ -27,6 +38,7 @@ describe("Upgrade 6.3.0 - canHandle", () => {
     let upgrade: Upgrade.Interface;
 
     beforeEach(() => {
+        vi.clearAllMocks();
         upgrade = createContainer().resolve(Upgrade);
     });
 
@@ -63,10 +75,13 @@ describe("Upgrade 6.3.0 - canHandle", () => {
 });
 
 describe("Upgrade 6.3.0 - execute", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     it("sets typescript devDependency to 6.0.3", async () => {
         const file = createMockPackageJsonFile();
-        const container = createContainer(file);
-        const upgrade = container.resolve(Upgrade);
+        const upgrade = createContainer(file).resolve(Upgrade);
 
         await upgrade.execute();
 
@@ -89,5 +104,25 @@ describe("Upgrade 6.3.0 - execute", () => {
         const upgrade = container.resolve(Upgrade);
 
         await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
+    });
+
+    it("calls packageManagerService.update when project uses yarn", async () => {
+        const container = createContainer(createMockPackageJsonFile(), "yarn");
+        const packageManagerService = container.resolve(PackageManagerService);
+        const upgrade = container.resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
+    });
+
+    it("does not call packageManagerService.update when project does not use yarn", async () => {
+        const container = createContainer(createMockPackageJsonFile(), "npm");
+        const packageManagerService = container.resolve(PackageManagerService);
+        const upgrade = container.resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(packageManagerService.update).not.toHaveBeenCalled();
     });
 });

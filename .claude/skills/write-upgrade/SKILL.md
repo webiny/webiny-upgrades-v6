@@ -81,6 +81,7 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 | `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
+| `PackageManagerService` | `../../service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — use `name()` to branch on the user's package manager without touching the filesystem directly. |
 | `RegistryService` | `../../service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves the current `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
 
 ### PackageJsonFile API

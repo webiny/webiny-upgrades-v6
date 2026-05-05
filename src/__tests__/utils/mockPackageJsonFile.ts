@@ -24,6 +24,6 @@ export const createMockPackageJsonFile = (
 ): PackageJsonFile => {
     return new PackageJsonFile({
         path: "/project/package.json",
-        raw: raw || initialData
+        raw: structuredClone(raw || initialData)
     });
 };

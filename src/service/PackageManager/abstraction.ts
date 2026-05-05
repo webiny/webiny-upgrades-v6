@@ -1,9 +1,11 @@
 import { createAbstraction } from "../../utils/createAbstraction.js";
 import type { Version } from "../../base/Version/index.js";
+import type { PackageManagerName as IPackageManagerName } from "./detect.js";
 
 interface IPackageManager {
     install(): Promise<void>;
     version(): Promise<Version>;
+    update(version: string): Promise<void>;
 }
 
 export const PackageManager = createAbstraction<IPackageManager>("Service/PackageManager");
@@ -12,11 +14,14 @@ export namespace PackageManager {
     export type Interface = IPackageManager;
     export type InstallResponse = Promise<void>;
     export type VersionResponse = Promise<Version>;
+    export type UpdateResponse = Promise<void>;
 }
 
 interface IPackageManagerService {
     install(): Promise<void>;
     version(): Promise<Version>;
+    name(): IPackageManagerName;
+    update(version: string): Promise<void>;
 }
 
 /**
@@ -30,4 +35,13 @@ export namespace PackageManagerService {
     export type Interface = IPackageManagerService;
     export type InstallResponse = Promise<void>;
     export type VersionResponse = Promise<Version>;
+    export type UpdateResponse = Promise<void>;
+}
+
+export const PackageManagerName = createAbstraction<IPackageManagerName>(
+    "Service/PackageManagerName"
+);
+
+export namespace PackageManagerName {
+    export type Interface = IPackageManagerName;
 }

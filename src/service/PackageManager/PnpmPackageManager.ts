@@ -19,6 +19,10 @@ class PnpmImpl implements PackageManagerAbstraction.Interface {
         const { stdout } = await execa("pnpm", ["--version"]);
         return Version.create(stdout.trim());
     }
+
+    public async update(_version: string): Promise<void> {
+        throw new Error("Updating pnpm via PackageManagerService is not supported yet.");
+    }
 }
 
 export const PnpmPackageManager = PackageManagerAbstraction.createImplementation({

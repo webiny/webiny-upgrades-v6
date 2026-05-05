@@ -79,7 +79,7 @@ Use relative imports — `~/` aliases are not available in all contexts.
 | `Context` | `base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (advances after each upgrade step), `setCurrentVersion()`, `resolve()` |
 | `Logger` | `base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `{ _done: true }` metadata; JSON transport maps it to `type: "done"`) |
 | `PackageJsonService` | `service/PackageJson/index.js` | `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void` — low-level load/save for any `package.json` path. See **PackageJsonFile API** below. |
-| `PackageManager` | `service/PackageManager/index.js` | `install()`, `version()` — auto-detected from lock file (yarn.lock → pnpm-lock.yaml → package-lock.json); override with `--package-manager` |
+| `PackageManagerService` | `service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — higher-level wrapper; `name()` returns the detected package manager for the project. Auto-detected from lock file (yarn.lock → pnpm-lock.yaml → package-lock.json); override with `--package-manager` |
 | `RegistryService` | `service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
 | `Git` | `service/Git/index.js` | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo |
 | `UpWebiny` | `tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves. |
@@ -163,7 +163,7 @@ Vitest is the test runner. Scripts:
 | `createIntegrationContainer` | `UpgradeRunner`-level test container (synthetic fixture upgrades, mocked services). Used by `UpgradeRunner.test.ts` |
 | `createMockPackageJsonFile(overrides?)` | Canonical in-memory `PackageJsonFile` with sensible defaults. **Do not duplicate per-upgrade** — pass `overrides` for customisation |
 | `createMockLogger()` | Silent `Logger.Interface` with `vi.fn()` for every level |
-| `registerUpgradeDeps(container, file)` | Registers mock `PackageJsonTool` and `ReferencesService` for upgrade unit tests |
+| `registerUpgradeDeps(container, file)` | Registers mock `PackageJsonTool`, `ReferencesService`, `PackageManagerService` (defaults to `name() → "yarn"`), and `Context` (`cwd="/project"`, `resolve()` joins from `/project`) for upgrade unit tests |
 
 ### Fixtures
 
