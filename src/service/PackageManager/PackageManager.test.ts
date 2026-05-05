@@ -93,7 +93,9 @@ describe("YarnPackageManager", () => {
     it("update runs yarn set version with the given version", async () => {
         (execa as any).mockResolvedValue({});
         await createContainer(YarnPackageManager).resolve(PackageManager).update("4.14.1");
-        expect(execa).toHaveBeenCalledWith("yarn", ["set", "version", "4.14.1"], { stdio: "inherit" });
+        expect(execa).toHaveBeenCalledWith("yarn", ["set", "version", "4.14.1"], {
+            stdio: "inherit"
+        });
     });
 
     it("update logs message and rethrows on failure", async () => {
@@ -180,7 +182,9 @@ describe("NpmPackageManager", () => {
     it("update runs npm install -g with the given version", async () => {
         (execa as any).mockResolvedValue({});
         await createContainer(NpmPackageManager).resolve(PackageManager).update("10.2.0");
-        expect(execa).toHaveBeenCalledWith("npm", ["install", "-g", "npm@10.2.0"], { stdio: "inherit" });
+        expect(execa).toHaveBeenCalledWith("npm", ["install", "-g", "npm@10.2.0"], {
+            stdio: "inherit"
+        });
     });
 
     it("update logs message and rethrows on failure", async () => {
