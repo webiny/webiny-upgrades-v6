@@ -101,9 +101,11 @@ describe("Upgrade 6.3.0 - execute", () => {
 
     it("throws when package.json cannot be loaded", async () => {
         const container = createContainer(null);
+        const packageManagerService = container.resolve(PackageManagerService);
         const upgrade = container.resolve(Upgrade);
 
         await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
+        expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
     });
 
     it("calls packageManagerService.update when project uses yarn", async () => {
