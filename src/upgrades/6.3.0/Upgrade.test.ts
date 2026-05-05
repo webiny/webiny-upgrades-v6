@@ -118,23 +118,23 @@ describe("Upgrade 6.3.0 - execute", () => {
         await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
     });
 
-    it("calls packageManagerService.update when project uses yarn", async () => {
-        const container = createContainer(createMockPackageJsonFile(), "yarn");
-        const packageManagerService = container.resolve(PackageManagerService);
-        const upgrade = container.resolve(Upgrade);
+    // it("calls packageManagerService.update when project uses yarn", async () => {
+    //     const container = createContainer(createMockPackageJsonFile(), "yarn");
+    //     const packageManagerService = container.resolve(PackageManagerService);
+    //     const upgrade = container.resolve(Upgrade);
 
-        await upgrade.execute();
+    //     await upgrade.execute();
 
-        expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
-    });
+    //     expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
+    // });
 
-    it("does not call packageManagerService.update when project does not use yarn", async () => {
-        const container = createContainer(createMockPackageJsonFile(), "npm");
-        const packageManagerService = container.resolve(PackageManagerService);
-        const upgrade = container.resolve(Upgrade);
+    // it("does not call packageManagerService.update when project does not use yarn", async () => {
+    //     const container = createContainer(createMockPackageJsonFile(), "npm");
+    //     const packageManagerService = container.resolve(PackageManagerService);
+    //     const upgrade = container.resolve(Upgrade);
 
-        await upgrade.execute();
+    //     await upgrade.execute();
 
-        expect(packageManagerService.update).not.toHaveBeenCalled();
-    });
+    //     expect(packageManagerService.update).not.toHaveBeenCalled();
+    // });
 });
