@@ -75,9 +75,9 @@ describe("getUserInput", () => {
     });
 
     describe("logLevel", () => {
-        it("defaults to 'error'", () => {
+        it("defaults to 'debug'", () => {
             const result = getUserInput({ cwd: "/project" });
-            expect(result.logLevel).toBe("info");
+            expect(result.logLevel).toBe("debug");
         });
 
         it("uses --log-level when provided", () => {

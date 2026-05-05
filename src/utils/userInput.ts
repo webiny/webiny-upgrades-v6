@@ -11,7 +11,7 @@ const schema = zod
             .max(1)
             .transform(input => input[0] ?? "latest"),
         cwd: zod.string().optional(),
-        logLevel: zod.enum(["debug", "info", "warn", "error"]).default("error"),
+        logLevel: zod.enum(["debug", "info", "warn", "error"]).default("debug"),
         json: zod.boolean(),
         force: zod.boolean(),
         registry: zod.url(),
@@ -79,7 +79,7 @@ export const getUserInput = (params: IGetUserInputParams): IGetUserInputResult =
         })
         .option("log-level", {
             type: "string",
-            default: "info",
+            default: "debug",
             describe:
                 "Set log level for the upgrade process executed by npx. Possible values are 'debug', 'info', 'warning', and 'error'."
         })
