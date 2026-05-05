@@ -22,9 +22,9 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         const packageJson = this.packageJsonTool.loadOrThrow();
         packageJson.setDevDependency("typescript", "6.0.3");
         this.packageJsonTool.save(packageJson);
-        // if (this.packageManagerService.name() === "yarn") {
-        //     await this.packageManagerService.update("4.14.1");
-        // }
+        if (this.packageManagerService.name() === "yarn") {
+            await this.packageManagerService.update("4.14.1");
+        }
     }
 }
 
