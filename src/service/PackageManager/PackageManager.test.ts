@@ -89,6 +89,22 @@ describe("YarnPackageManager", () => {
         const pm = createContainer(YarnPackageManager).resolve(PackageManager);
         await expect(pm.version()).rejects.toThrow(InvalidSemverError);
     });
+
+    it("update runs yarn set version with the given version", async () => {
+        (execa as any).mockResolvedValue({});
+        await createContainer(YarnPackageManager).resolve(PackageManager).update("4.14.1");
+        expect(execa).toHaveBeenCalledWith("yarn", ["set", "version", "4.14.1"], { stdio: "inherit" });
+    });
+
+    it("update logs message and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ message: "command failed" });
+        const container = createContainer(YarnPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.update("4.14.1")).rejects.toEqual({ message: "command failed" });
+        expect(logger.error).toHaveBeenCalledWith("command failed");
+    });
 });
 
 describe("PnpmPackageManager", () => {
@@ -121,6 +137,13 @@ describe("PnpmPackageManager", () => {
         const pm = createContainer(PnpmPackageManager).resolve(PackageManager);
         await expect(pm.version()).rejects.toThrow(InvalidSemverError);
     });
+
+    it("update throws not supported error", async () => {
+        const pm = createContainer(PnpmPackageManager).resolve(PackageManager);
+        await expect(pm.update("9.0.0")).rejects.toThrow(
+            "Updating pnpm via PackageManagerService is not supported yet."
+        );
+    });
 });
 
 describe("NpmPackageManager", () => {
@@ -152,5 +175,21 @@ describe("NpmPackageManager", () => {
         (execa as any).mockResolvedValue({ stdout: "bad" });
         const pm = createContainer(NpmPackageManager).resolve(PackageManager);
         await expect(pm.version()).rejects.toThrow(InvalidSemverError);
+    });
+
+    it("update runs npm install -g with the given version", async () => {
+        (execa as any).mockResolvedValue({});
+        await createContainer(NpmPackageManager).resolve(PackageManager).update("10.2.0");
+        expect(execa).toHaveBeenCalledWith("npm", ["install", "-g", "npm@10.2.0"], { stdio: "inherit" });
+    });
+
+    it("update logs message and rethrows on failure", async () => {
+        (execa as any).mockRejectedValue({ message: "npm failed" });
+        const container = createContainer(NpmPackageManager);
+        const logger = container.resolve(Logger);
+        const pm = container.resolve(PackageManager);
+
+        await expect(pm.update("10.2.0")).rejects.toEqual({ message: "npm failed" });
+        expect(logger.error).toHaveBeenCalledWith("npm failed");
     });
 });
