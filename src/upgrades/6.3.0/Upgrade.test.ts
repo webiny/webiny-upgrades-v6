@@ -1,9 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import path from "node:path";
-
-vi.mock("node:fs");
-
-import fs from "node:fs";
 import { Container } from "@webiny/di";
 import { Upgrade as Upgrade630 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
@@ -15,19 +10,6 @@ import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 import type { PackageManagerName } from "../../service/PackageManager/detect.js";
-
-const CWD = "/project";
-const BIN_DIR = path.join(
-    CWD,
-    "node_modules",
-    "@webiny",
-    "create-webiny-project",
-    "services",
-    "SetupYarn",
-    "binaries"
-);
-const RELEASES_DIR = path.join(CWD, ".yarn", "releases");
-const YARNRC_PATH = path.join(CWD, ".yarnrc.yml");
 
 const v = (version: string) => Version.create(version);
 
@@ -124,117 +106,23 @@ describe("Upgrade 6.3.0 - execute", () => {
         await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
     });
 
-    it("updates packageManager when binary is found in the binaries directory", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
-            (p: unknown) => p === BIN_DIR
-        );
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+    it("calls packageManagerService.update when project uses yarn", async () => {
+        const container = createContainer(createMockPackageJsonFile(), "yarn");
+        const packageManagerService = container.resolve(PackageManagerService);
+        const upgrade = container.resolve(Upgrade);
 
         await upgrade.execute();
 
-        expect(file.get("packageManager")).toBe("yarn@4.9.1");
+        expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
     });
 
-    it("copies yarn binary to .yarn/releases/ when directory exists", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
-            (p: unknown) => p === BIN_DIR || p === RELEASES_DIR
-        );
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
+    it("does not call packageManagerService.update when project does not use yarn", async () => {
+        const container = createContainer(createMockPackageJsonFile(), "npm");
+        const packageManagerService = container.resolve(PackageManagerService);
+        const upgrade = container.resolve(Upgrade);
 
         await upgrade.execute();
 
-        expect(fs.copyFileSync).toHaveBeenCalledWith(
-            path.join(BIN_DIR, "yarn-4.9.1.cjs"),
-            path.join(RELEASES_DIR, "yarn-4.9.1.cjs")
-        );
-    });
-
-    it("skips copying yarn binary when .yarn/releases/ does not exist", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
-            (p: unknown) => p === BIN_DIR
-        );
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(fs.copyFileSync).not.toHaveBeenCalled();
-    });
-
-    it("updates yarnPath in .yarnrc.yml when file exists", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
-            (p: unknown) => p === BIN_DIR || p === YARNRC_PATH
-        );
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
-        (fs.readFileSync as ReturnType<typeof vi.fn>).mockReturnValue(
-            "yarnPath: .yarn/releases/yarn-4.10.0.cjs\n"
-        );
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(fs.writeFileSync).toHaveBeenCalledWith(
-            YARNRC_PATH,
-            "yarnPath: .yarn/releases/yarn-4.9.1.cjs\n",
-            "utf-8"
-        );
-    });
-
-    it("skips updating .yarnrc.yml when file does not exist", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockImplementation(
-            (p: unknown) => p === BIN_DIR
-        );
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue(["yarn-4.9.1.cjs"]);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(fs.writeFileSync).not.toHaveBeenCalled();
-    });
-
-    it("skips packageManager update when project is not yarn", async () => {
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "npm").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(fs.existsSync).not.toHaveBeenCalled();
-        expect(file.get("packageManager")).toBe("yarn@4.10.0");
-    });
-
-    it("skips packageManager update when binaries directory does not exist", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(false);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(fs.existsSync).toHaveBeenCalledWith(BIN_DIR);
-        expect(file.get("packageManager")).toBe("yarn@4.10.0");
-    });
-
-    it("skips packageManager update when no yarn binary found in binaries directory", async () => {
-        (fs.existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-        (fs.readdirSync as ReturnType<typeof vi.fn>).mockReturnValue([]);
-
-        const file = createMockPackageJsonFile();
-        const upgrade = createContainer(file, "yarn").resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(file.get("packageManager")).toBe("yarn@4.10.0");
+        expect(packageManagerService.update).not.toHaveBeenCalled();
     });
 });

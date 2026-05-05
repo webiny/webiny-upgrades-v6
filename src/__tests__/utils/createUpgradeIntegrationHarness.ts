@@ -1,4 +1,4 @@
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from "node:fs";
 import { mkdtemp, cp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -98,11 +98,40 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
         restore: vi.fn().mockResolvedValue(undefined)
     });
 
+    const updateMock = vi.fn().mockImplementation(async (version: string) => {
+        // Simulate yarn set version by updating package.json
+        if (detectedPackageManager === "yarn") {
+            const pkgJsonPath = path.join(tmpDir, "package.json");
+            const pkg = JSON.parse(readFileSync(pkgJsonPath, "utf-8"));
+            pkg.packageManager = `yarn@${version}`;
+
+            // Create .yarn/releases directory and binary file
+            const releasesDir = path.join(tmpDir, ".yarn", "releases");
+            mkdirSync(releasesDir, { recursive: true });
+            writeFileSync(path.join(releasesDir, `yarn-${version}.cjs`), "");
+
+            // Update .yarnrc.yml
+            const yarnrcPath = path.join(tmpDir, ".yarnrc.yml");
+            if (existsSync(yarnrcPath)) {
+                const yarnrcContent = readFileSync(yarnrcPath, "utf-8");
+                const updated = yarnrcContent.replace(
+                    /^yarnPath:.*$/m,
+                    `yarnPath: .yarn/releases/yarn-${version}.cjs`
+                );
+                writeFileSync(yarnrcPath, updated, "utf-8");
+            } else {
+                writeFileSync(yarnrcPath, `yarnPath: .yarn/releases/yarn-${version}.cjs\n`, "utf-8");
+            }
+
+            writeFileSync(pkgJsonPath, JSON.stringify(pkg, null, 2), "utf-8");
+        }
+    });
+
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),
         version: vi.fn(),
         name: vi.fn().mockReturnValue(detectedPackageManager),
-        update: vi.fn().mockResolvedValue(undefined)
+        update: updateMock
     });
 
     container.registerInstance(RegistryService, {

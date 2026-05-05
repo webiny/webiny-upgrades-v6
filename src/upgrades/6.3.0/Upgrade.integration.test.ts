@@ -14,33 +14,21 @@ describe("Upgrade 6.3.0 - integration", () => {
             targetVersion: "6.3.0"
         });
 
-        const binDir = path.join(
-            harness.tmpDir,
-            "node_modules",
-            "@webiny",
-            "create-webiny-project",
-            "services",
-            "SetupYarn",
-            "binaries"
-        );
-        fs.mkdirSync(binDir, { recursive: true });
-        fs.writeFileSync(path.join(binDir, "yarn-4.9.1.cjs"), "");
-
         await harness.run();
 
         const pkg = harness.readPackageJson();
 
         expect(pkg.devDependencies?.typescript).toBe("6.0.3");
-        expect(pkg.packageManager).toBe("yarn@4.9.1");
+        expect(pkg.packageManager).toBe("yarn@4.14.1");
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.3.0");
         expect(pkg.dependencies?.webiny).toBe("6.3.0");
         expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.3.0");
 
         expect(
-            fs.existsSync(path.join(harness.tmpDir, ".yarn", "releases", "yarn-4.9.1.cjs"))
+            fs.existsSync(path.join(harness.tmpDir, ".yarn", "releases", "yarn-4.14.1.cjs"))
         ).toBe(true);
         expect(harness.readFile(".yarnrc.yml")).toContain(
-            "yarnPath: .yarn/releases/yarn-4.9.1.cjs"
+            "yarnPath: .yarn/releases/yarn-4.14.1.cjs"
         );
 
         expect(harness.upgradeHistory.list()).toContainEqual(
