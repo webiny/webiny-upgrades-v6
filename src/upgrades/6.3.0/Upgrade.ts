@@ -28,9 +28,11 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         const webinyConfig = this.webinyConfigTool.read();
         webinyConfig.addChild("Infra.Env.IsProd", {
             comment: "Encryption MUST always be configured for production environments.",
-            children: (children) => {
+            children: children => {
                 children.addChild("Infra.Encryption", {
-                    props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }
+                    props: {
+                        passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""'
+                    }
                 });
             }
         });

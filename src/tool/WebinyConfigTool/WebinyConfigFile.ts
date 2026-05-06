@@ -37,7 +37,10 @@ export class WebinyConfigFile implements WebinyConfigTool.File {
         }
         const container = this.resolveContainer(containerPath);
         if (!container) {
-            const missing = containerPath.length > 0 ? containerPath[containerPath.length - 1] : "root fragment";
+            const missing =
+                containerPath.length > 0
+                    ? containerPath[containerPath.length - 1]
+                    : "root fragment";
             this.logger.warn(`<${missing}> not found in webiny.config.tsx, cannot add children`);
             return;
         }
