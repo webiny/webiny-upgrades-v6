@@ -37,6 +37,13 @@ describe("Upgrade 6.3.0 - integration", () => {
             "yarnPath: .yarn/releases/yarn-4.14.1.cjs"
         );
 
+        const webinyConfig = harness.readFile("webiny.config.tsx");
+        expect(webinyConfig).toContain("<Infra.Env.IsProd>");
+        expect(webinyConfig).toContain(
+            `<Infra.Encryption passphrase={process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""} />`
+        );
+        expect(webinyConfig).toContain("</Infra.Env.IsProd>");
+
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.3.0" })
         );
@@ -56,6 +63,13 @@ describe("Upgrade 6.3.0 - integration", () => {
         expect(pkg.devDependencies?.typescript).toBe("6.0.3");
         expect(pkg.packageManager).toBeUndefined();
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.3.0");
+
+        const webinyConfig = harness.readFile("webiny.config.tsx");
+        expect(webinyConfig).toContain("<Infra.Env.IsProd>");
+        expect(webinyConfig).toContain(
+            `<Infra.Encryption passphrase={process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""} />`
+        );
+        expect(webinyConfig).toContain("</Infra.Env.IsProd>");
 
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.3.0" })
@@ -77,6 +91,13 @@ describe("Upgrade 6.3.0 - integration", () => {
         expect(pkg.packageManager).toBe("yarn@4.14.1");
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.3.0-beta.3");
         expect(pkg.dependencies?.webiny).toBe("6.3.0-beta.3");
+
+        const webinyConfig = harness.readFile("webiny.config.tsx");
+        expect(webinyConfig).toContain("<Infra.Env.IsProd>");
+        expect(webinyConfig).toContain(
+            `<Infra.Encryption passphrase={process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""} />`
+        );
+        expect(webinyConfig).toContain("</Infra.Env.IsProd>");
 
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.3.0" })

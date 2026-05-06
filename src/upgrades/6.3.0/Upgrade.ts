@@ -1,14 +1,17 @@
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { PackageManagerService } from "../../service/PackageManager/index.js";
+import { Context } from "../../base/Context/index.js";
 import { Version } from "../../base/Version/index.js";
+import { addInfraEncryption } from "./addInfraEncryption.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.3.0");
 
     public constructor(
         private readonly packageJsonTool: PackageJsonTool.Interface,
-        private readonly packageManagerService: PackageManagerService.Interface
+        private readonly packageManagerService: PackageManagerService.Interface,
+        private readonly context: Context.Interface
     ) {}
 
     public async canHandle({
@@ -22,6 +25,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         const packageJson = this.packageJsonTool.loadOrThrow();
         packageJson.setDevDependency("typescript", "6.0.3");
         this.packageJsonTool.save(packageJson);
+        addInfraEncryption(this.context.resolve("webiny.config.tsx"));
         if (this.packageManagerService.name() === "yarn") {
             await this.packageManagerService.update("4.14.1");
         }
@@ -30,5 +34,5 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool, PackageManagerService]
+    dependencies: [PackageJsonTool, PackageManagerService, Context]
 });
