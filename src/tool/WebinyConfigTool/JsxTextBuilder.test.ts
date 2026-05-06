@@ -21,9 +21,7 @@ describe("JsxTextBuilder", () => {
             { props: { passphrase: 'process.env.X || ""', n: "42" } },
             indent
         );
-        expect(result).toBe(
-            `${indent}<Infra.Foo passphrase={process.env.X || ""} n={42} />`
-        );
+        expect(result).toBe(`${indent}<Infra.Foo passphrase={process.env.X || ""} n={42} />`);
     });
 
     it("renders a block element with nested addChild children", () => {
@@ -49,5 +47,35 @@ describe("JsxTextBuilder", () => {
             "    " // 4-space indent
         );
         expect(result).toBe("    <Parent>\n        <Child />\n    </Parent>");
+    });
+
+    it("insertBefore on synthetic builder appends the child without throwing", () => {
+        const result = builder.buildElement(
+            "Parent",
+            {
+                children: b => {
+                    b.insertBefore("NonExistent", "ChildA");
+                    b.insertBefore("ChildA", "ChildB");
+                }
+            },
+            indent
+        );
+        expect(result).toContain("<ChildA />");
+        expect(result).toContain("<ChildB />");
+    });
+
+    it("insertAfter on synthetic builder appends the child without throwing", () => {
+        const result = builder.buildElement(
+            "Parent",
+            {
+                children: b => {
+                    b.insertAfter("NonExistent", "ChildA");
+                    b.insertAfter("ChildA", "ChildB");
+                }
+            },
+            indent
+        );
+        expect(result).toContain("<ChildA />");
+        expect(result).toContain("<ChildB />");
     });
 });

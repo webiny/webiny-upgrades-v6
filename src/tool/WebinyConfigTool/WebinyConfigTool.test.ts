@@ -51,7 +51,12 @@ describe("WebinyConfigTool", () => {
     });
 
     it("save() calls file.save()", () => {
-        const mockFile = { addChild: vi.fn(), save: vi.fn() };
+        const mockFile = {
+            addChild: vi.fn(),
+            insertBefore: vi.fn(),
+            insertAfter: vi.fn(),
+            save: vi.fn()
+        };
         const tool = createContainer(tmpDir).resolve(WebinyConfigToolAbstraction);
         tool.save(mockFile);
         expect(mockFile.save).toHaveBeenCalledOnce();

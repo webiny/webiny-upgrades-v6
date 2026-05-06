@@ -8,6 +8,8 @@ interface AddChildOptions {
 
 interface IWebinyConfigBuilder {
     addChild(tag: string, options?: AddChildOptions): void;
+    insertBefore(ref: string, tag: string, options?: AddChildOptions): void;
+    insertAfter(ref: string, tag: string, options?: AddChildOptions): void;
 }
 
 interface IWebinyConfigFile extends IWebinyConfigBuilder {

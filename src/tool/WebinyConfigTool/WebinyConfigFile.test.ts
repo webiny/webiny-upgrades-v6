@@ -246,3 +246,190 @@ describe("WebinyConfigFile", () => {
         expect(read()).toContain("<Infra.NewThing />");
     });
 });
+
+// ── fixture with existing block element (for makeBuilder / structural-merge tests) ────
+
+const FIXTURE_WITH_BLOCK = `export const Extensions = () => {
+    return (
+        <>
+            <Infra.Env.IsProd>
+                <ChildA />
+                <ChildB />
+            </Infra.Env.IsProd>
+            <ProjectAws />
+        </>
+    );
+};
+`;
+
+describe("WebinyConfigFile — insertBefore", () => {
+    let tmpDir: string;
+    let filePath: string;
+    let logger: ReturnType<typeof createMockLogger>;
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "webiny-config-test-"));
+        filePath = path.join(tmpDir, "webiny.config.tsx");
+        logger = createMockLogger();
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    const createFile = (content = FIXTURE): WebinyConfigFile => {
+        fs.writeFileSync(filePath, content, "utf-8");
+        return new WebinyConfigFile(filePath, logger);
+    };
+
+    const read = (): string => fs.readFileSync(filePath, "utf-8");
+
+    it("places element immediately before the ref (non-first child)", () => {
+        const file = createFile();
+        file.insertBefore("ProjectAws", "Infra.Foo");
+        file.save();
+        const content = read();
+        expect(content).toContain("<Infra.Foo />");
+        expect(content.indexOf("<Infra.ProductionEnvironments")).toBeLessThan(
+            content.indexOf("<Infra.Foo />")
+        );
+        expect(content.indexOf("<Infra.Foo />")).toBeLessThan(content.indexOf("<ProjectAws />"));
+    });
+
+    it("places element before the first child when ref is the first child", () => {
+        const file = createFile();
+        file.insertBefore("Infra.ProductionEnvironments", "Infra.Foo");
+        file.save();
+        const content = read();
+        expect(content).toContain("<Infra.Foo />");
+        expect(content.indexOf("<Infra.Foo />")).toBeLessThan(
+            content.indexOf("<Infra.ProductionEnvironments")
+        );
+    });
+
+    it("warns and appends at end when ref not found", () => {
+        const file = createFile();
+        file.insertBefore("NonExistent", "Infra.Foo");
+        file.save();
+        const content = read();
+        // Foo appended at end — after ProjectAws
+        expect(content.indexOf("<ProjectAws />")).toBeLessThan(content.indexOf("<Infra.Foo />"));
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<NonExistent>"));
+    });
+
+    it("warns and no-ops when tag already exists", () => {
+        const file = createFile();
+        file.insertBefore("ProjectAws", "Infra.ProductionEnvironments"); // already in fixture
+        file.save();
+        const content = read();
+        const count = (content.match(/<Infra\.ProductionEnvironments/g) ?? []).length;
+        expect(count).toBe(1);
+        expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining("<Infra.ProductionEnvironments>")
+        );
+    });
+
+    it("warns and no-ops when tag already exists even with children callback", () => {
+        const file = createFile();
+        file.insertBefore("ProjectAws", "Infra.ProductionEnvironments", {
+            children: b => b.addChild("ShouldNotAppear")
+        });
+        file.save();
+        expect(read()).not.toContain("<ShouldNotAppear");
+        expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining("<Infra.ProductionEnvironments>")
+        );
+    });
+
+    it("works inside a children callback on an existing container (makeBuilder path)", () => {
+        const file = createFile(FIXTURE_WITH_BLOCK);
+        file.addChild("Infra.Env.IsProd", {
+            children: b => {
+                b.insertBefore("ChildB", "NewChild");
+            }
+        });
+        file.save();
+        const content = read();
+        expect(content).toContain("<NewChild />");
+        expect(content.indexOf("<ChildA />")).toBeLessThan(content.indexOf("<NewChild />"));
+        expect(content.indexOf("<NewChild />")).toBeLessThan(content.indexOf("<ChildB />"));
+    });
+});
+
+describe("WebinyConfigFile — insertAfter", () => {
+    let tmpDir: string;
+    let filePath: string;
+    let logger: ReturnType<typeof createMockLogger>;
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "webiny-config-test-"));
+        filePath = path.join(tmpDir, "webiny.config.tsx");
+        logger = createMockLogger();
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    const createFile = (content = FIXTURE): WebinyConfigFile => {
+        fs.writeFileSync(filePath, content, "utf-8");
+        return new WebinyConfigFile(filePath, logger);
+    };
+
+    const read = (): string => fs.readFileSync(filePath, "utf-8");
+
+    it("places element immediately after the ref", () => {
+        const file = createFile();
+        file.insertAfter("Infra.ProductionEnvironments", "Infra.Foo");
+        file.save();
+        const content = read();
+        expect(content).toContain("<Infra.Foo />");
+        expect(content.indexOf("<Infra.ProductionEnvironments")).toBeLessThan(
+            content.indexOf("<Infra.Foo />")
+        );
+        expect(content.indexOf("<Infra.Foo />")).toBeLessThan(content.indexOf("<ProjectAws />"));
+    });
+
+    it("warns and appends at end when ref not found", () => {
+        const file = createFile();
+        file.insertAfter("NonExistent", "Infra.Foo");
+        file.save();
+        const content = read();
+        expect(content.indexOf("<ProjectAws />")).toBeLessThan(content.indexOf("<Infra.Foo />"));
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<NonExistent>"));
+    });
+
+    it("warns and no-ops when tag already exists", () => {
+        const file = createFile();
+        file.insertAfter("Infra.ProductionEnvironments", "ProjectAws"); // already in fixture
+        file.save();
+        const content = read();
+        const count = (content.match(/<ProjectAws \/>/g) ?? []).length;
+        expect(count).toBe(1);
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<ProjectAws>"));
+    });
+
+    it("warns and no-ops when tag already exists even with children callback", () => {
+        const file = createFile();
+        file.insertAfter("Infra.ProductionEnvironments", "ProjectAws", {
+            children: b => b.addChild("ShouldNotAppear")
+        });
+        file.save();
+        expect(read()).not.toContain("<ShouldNotAppear");
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<ProjectAws>"));
+    });
+
+    it("works inside a children callback on an existing container (makeBuilder path)", () => {
+        const file = createFile(FIXTURE_WITH_BLOCK);
+        file.addChild("Infra.Env.IsProd", {
+            children: b => {
+                b.insertAfter("ChildA", "NewChild");
+            }
+        });
+        file.save();
+        const content = read();
+        expect(content).toContain("<NewChild />");
+        expect(content.indexOf("<ChildA />")).toBeLessThan(content.indexOf("<NewChild />"));
+        expect(content.indexOf("<NewChild />")).toBeLessThan(content.indexOf("<ChildB />"));
+    });
+});

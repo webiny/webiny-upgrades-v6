@@ -1,7 +1,11 @@
 import type { WebinyConfigTool } from "./abstraction.js";
 
 export class JsxTextBuilder {
-    public buildElement(tag: string, options: WebinyConfigTool.ChildOptions, indent: string): string {
+    public buildElement(
+        tag: string,
+        options: WebinyConfigTool.ChildOptions,
+        indent: string
+    ): string {
         const lines: string[] = [];
         const propsStr = this.buildPropsStr(options.props);
 
@@ -14,6 +18,20 @@ export class JsxTextBuilder {
             const childIndent = indent + "    ";
             const syntheticBuilder: WebinyConfigTool.Builder = {
                 addChild: (childTag: string, childOpts?: WebinyConfigTool.ChildOptions) => {
+                    childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
+                },
+                insertBefore: (
+                    _ref: string,
+                    childTag: string,
+                    childOpts?: WebinyConfigTool.ChildOptions
+                ) => {
+                    childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
+                },
+                insertAfter: (
+                    _ref: string,
+                    childTag: string,
+                    childOpts?: WebinyConfigTool.ChildOptions
+                ) => {
                     childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
                 }
             };
@@ -32,6 +50,11 @@ export class JsxTextBuilder {
         if (!props || Object.keys(props).length === 0) {
             return "";
         }
-        return " " + Object.entries(props).map(([k, v]) => `${k}={${v}}`).join(" ");
+        return (
+            " " +
+            Object.entries(props)
+                .map(([k, v]) => `${k}={${v}}`)
+                .join(" ")
+        );
     }
 }
