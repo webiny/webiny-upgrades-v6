@@ -8,8 +8,11 @@ import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
+import { addInfraEncryption } from "./addInfraEncryption.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 import type { PackageManagerName } from "../../service/PackageManager/detect.js";
+
+vi.mock("./addInfraEncryption.js", () => ({ addInfraEncryption: vi.fn() }));
 
 const v = (version: string) => Version.create(version);
 
@@ -136,5 +139,13 @@ describe("Upgrade 6.3.0 - execute", () => {
         await upgrade.execute();
 
         expect(packageManagerService.update).not.toHaveBeenCalled();
+    });
+
+    it("calls addInfraEncryption with the resolved webiny.config.tsx path", async () => {
+        const upgrade = createContainer().resolve(Upgrade);
+
+        await upgrade.execute();
+
+        expect(vi.mocked(addInfraEncryption)).toHaveBeenCalledWith("/project/webiny.config.tsx");
     });
 });
