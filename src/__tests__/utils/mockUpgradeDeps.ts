@@ -4,7 +4,6 @@ import type { Container as DIContainer } from "@webiny/di";
 import { Context } from "../../base/Context/index.js";
 import { Version } from "../../base/Version/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
-import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { PackageManagerService } from "../../service/PackageManager/index.js";
 import { ReferencesService } from "../../service/References/index.js";
@@ -17,6 +16,9 @@ const MOCK_CWD = "/project";
  * and Context into the container. Pass a file (or null) to control what
  * PackageJsonTool.load returns. PackageManagerService.name() defaults to "yarn" to match
  * the mock package.json fixture (packageManager: "yarn@4.10.0").
+ *
+ * Upgrade tests that need WebinyConfigTool should register it directly in their own
+ * createContainer helper.
  */
 export const registerUpgradeDeps = (
     container: DIContainer,
@@ -30,10 +32,6 @@ export const registerUpgradeDeps = (
             }
             return file;
         }),
-        save: vi.fn()
-    });
-    container.registerInstance(WebinyConfigTool, {
-        read: vi.fn().mockReturnValue({ addChild: vi.fn(), save: vi.fn() }),
         save: vi.fn()
     });
     container.registerInstance(ReferencesService, {
