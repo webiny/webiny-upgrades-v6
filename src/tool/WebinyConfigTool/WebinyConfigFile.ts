@@ -37,7 +37,7 @@ export class WebinyConfigFile implements WebinyConfigTool.File {
         }
         const container = this.resolveContainer(containerPath);
         if (!container) {
-            const missing = containerPath[containerPath.length - 1];
+            const missing = containerPath.length > 0 ? containerPath[containerPath.length - 1] : "root fragment";
             this.logger.warn(`<${missing}> not found in webiny.config.tsx, cannot add children`);
             return;
         }
@@ -55,7 +55,11 @@ export class WebinyConfigFile implements WebinyConfigTool.File {
         }
 
         // Re-query fresh refs after any prior insertions in this same callback batch.
-        const freshContainer = this.resolveContainer(containerPath)!;
+        const freshContainer = this.resolveContainer(containerPath);
+        if (!freshContainer) {
+            this.logger.warn(`Container became unavailable during insertion, skipping`);
+            return;
+        }
         const freshChildren = this.getRealChildren(freshContainer);
         const indent = this.inferIndent(freshChildren, freshContainer);
         const text = this.buildText(tag, options, indent);
