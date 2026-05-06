@@ -16,6 +16,9 @@ const MOCK_CWD = "/project";
  * and Context into the container. Pass a file (or null) to control what
  * PackageJsonTool.load returns. PackageManagerService.name() defaults to "yarn" to match
  * the mock package.json fixture (packageManager: "yarn@4.10.0").
+ *
+ * Upgrade tests that need WebinyConfigTool should register it directly in their own
+ * createContainer helper.
  */
 export const registerUpgradeDeps = (
     container: DIContainer,

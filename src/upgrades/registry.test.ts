@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,6 +8,7 @@ import { Upgrade } from "../base/Upgrade/abstraction.js";
 import { isFeature } from "../utils/createFeature.js";
 import { registerUpgradeDeps } from "../__tests__/utils/mockUpgradeDeps.js";
 import { createMockPackageJsonFile } from "../__tests__/utils/mockPackageJsonFile.js";
+import { WebinyConfigTool } from "../tool/WebinyConfigTool/index.js";
 
 const upgradesDir = import.meta.dirname;
 
@@ -39,6 +40,10 @@ describe("upgrades registry", () => {
                 const mod = await import(pathToFileURL(indexPath).href);
                 const container = new Container();
                 registerUpgradeDeps(container, createMockPackageJsonFile());
+                container.registerInstance(WebinyConfigTool, {
+                    read: vi.fn().mockReturnValue({ addChild: vi.fn(), save: vi.fn() }),
+                    save: vi.fn()
+                });
                 mod.default.register(container);
                 const upgrade = container.resolve(Upgrade);
                 expect(typeof upgrade.canHandle).toBe("function");
@@ -51,6 +56,10 @@ describe("upgrades registry", () => {
                 const mod = await import(pathToFileURL(indexPath).href);
                 const container = new Container();
                 registerUpgradeDeps(container, createMockPackageJsonFile());
+                container.registerInstance(WebinyConfigTool, {
+                    read: vi.fn().mockReturnValue({ addChild: vi.fn(), save: vi.fn() }),
+                    save: vi.fn()
+                });
                 mod.default.register(container);
                 const upgrade = container.resolve(Upgrade);
                 expect(upgrade.version).toEqual(Version.create(dir.name));

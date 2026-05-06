@@ -31,12 +31,16 @@ Both bounds are required — without `currentVersion`, older upgrades would re-r
 ```ts
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.2.0");
 
-    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
+    public constructor(
+        private readonly packageJsonTool: PackageJsonTool.Interface,
+        private readonly webinyConfigTool: WebinyConfigTool.Interface
+    ) {}
 
     public async canHandle({ targetVersion, currentVersion }: UpgradeAbstraction.Params): Promise<boolean> {
         return this.version.between(currentVersion, targetVersion);
@@ -51,9 +55,11 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool]
+    dependencies: [PackageJsonTool, WebinyConfigTool]
 });
 ```
+
+Only include `WebinyConfigTool` in `dependencies` if the upgrade actually modifies `webiny.config.tsx`.
 
 ## index.ts
 
@@ -78,11 +84,40 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
 | `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
+| `WebinyConfigTool` | `../../tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if not found), `save(file): void`. `addChild(tag, opts)` merges structurally into existing parents (warns and skips duplicates). `insertBefore(ref, tag, opts)` / `insertAfter(ref, tag, opts)` position a new element relative to a named sibling (warn + append at end if ref not found). See **WebinyConfigFile API** below. |
 | `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
 | `PackageManagerService` | `../../service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — use `name()` to branch on the user's package manager without touching the filesystem directly. |
 | `RegistryService` | `../../service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves the current `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
+
+### WebinyConfigFile API
+
+The object returned by `WebinyConfigTool.read()`:
+
+```ts
+file.addChild(tag: string, options?: ChildOptions): void
+file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
+file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+file.save(): void
+
+interface ChildOptions {
+    comment?: string;                       // renders as {/* comment */} above the element
+    props?: Record<string, string>;         // expression syntax: { passphrase: 'process.env.X || ""' }
+    children?: (builder: Builder) => void;  // nested children callback
+}
+```
+
+`addChild` behaviour:
+- **Not found** → inserts after the last JSX fragment child (self-closing if no `children`, block element if `children` provided)
+- **Found, no `children` callback** → logs a warning and skips (never creates duplicates)
+- **Found, `children` callback provided** → structural merge: recurses into the existing element
+
+`insertBefore(ref, tag, options)` / `insertAfter(ref, tag, options)` behaviour:
+- **`ref` not found** → warns and falls back to append at end
+- **`tag` already exists** → warns and no-ops — **no** structural merge, even if `options.children` provided
+- **Normal path** → inserts `tag` immediately before/after the first occurrence of `ref`; indent is inferred from `ref`'s column offset
+- Available at every nesting level via the `Builder` passed to a `children` callback
 
 ### PackageJsonFile API
 
@@ -127,7 +162,7 @@ Every upgrade needs both a unit test and an integration test.
 
 ### Unit test (`Upgrade.test.ts`)
 
-Next to `Upgrade.ts`. Mocks `PackageJsonTool` via `registerUpgradeDeps`. Uses the canonical `createMockPackageJsonFile` from `src/__tests__/utils/`. Existing examples: `src/upgrades/6.3.0/Upgrade.test.ts`.
+Next to `Upgrade.ts`. Mocks `PackageJsonTool` via `registerUpgradeDeps`. Uses the canonical `createMockPackageJsonFile` from `src/__tests__/utils/`. If the upgrade uses `WebinyConfigTool`, register a mock instance directly in `createContainer` (not in `registerUpgradeDeps`). Existing examples: `src/upgrades/6.3.0/Upgrade.test.ts`.
 
 ### Integration test (`Upgrade.integration.test.ts`)
 

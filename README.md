@@ -73,19 +73,40 @@ Already-executed upgrades are skipped on subsequent runs.
 ```ts
 import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.2.0");
 
-    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
+    public constructor(
+        private readonly packageJsonTool: PackageJsonTool.Interface,
+        private readonly webinyConfigTool: WebinyConfigTool.Interface
+    ) {}
 
     public async canHandle({ targetVersion, currentVersion }: UpgradeAbstraction.Params): Promise<boolean> {
         return this.version.between(currentVersion, targetVersion);
     }
 
     public async execute(): Promise<void> {
-        // Version-specific transformations only.
+        // Mutate package.json
+        const packageJson = this.packageJsonTool.loadOrThrow();
+        packageJson.setDevDependency("some-package", "1.0.0");
+        this.packageJsonTool.save(packageJson);
+
+        // Mutate webiny.config.tsx
+        // addChild — structural merge into existing parents (warns and skips duplicates)
+        // insertBefore / insertAfter — position a new element relative to a named sibling
+        const webinyConfig = this.webinyConfigTool.read();
+        webinyConfig.addChild("Infra.Env.IsProd", {
+            children: (children) => {
+                children.addChild("Infra.Encryption", {
+                    props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }
+                });
+            }
+        });
+        this.webinyConfigTool.save(webinyConfig);
+
         // Do NOT call upWebiny.execute() — the handler pins all @webiny/*
         // packages to the target version after all upgrade steps complete.
     }
@@ -93,7 +114,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool]
+    dependencies: [PackageJsonTool, WebinyConfigTool]
 });
 ```
 
