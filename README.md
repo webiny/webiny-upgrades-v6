@@ -94,7 +94,9 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         packageJson.setDevDependency("some-package", "1.0.0");
         this.packageJsonTool.save(packageJson);
 
-        // Mutate webiny.config.tsx (addChild is duplicate-safe — warns and skips if already present)
+        // Mutate webiny.config.tsx
+        // addChild — structural merge into existing parents (warns and skips duplicates)
+        // insertBefore / insertAfter — position a new element relative to a named sibling
         const webinyConfig = this.webinyConfigTool.read();
         webinyConfig.addChild("Infra.Env.IsProd", {
             children: (children) => {
