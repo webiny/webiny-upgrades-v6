@@ -20,7 +20,7 @@ Dependency injection via `@webiny/di`. Everything is an abstraction with an impl
 |---|---|---|
 | Base | `src/base/` | Core abstractions: `Application`, `Responder`, `Context`, `Input`, `Upgrade`, `Container`, `Version` |
 | Services | `src/service/` | Single-responsibility: `Logger`, `PackageJson`, `PackageManager`, `Registry`, `Git`, `UpgradeHandler`, `UpgradeRunner` |
-| Tools | `src/tool/` | Orchestrate services: `UpWebiny`, `PackageJsonTool`, `DependencyGuard`, `UpgradeHistory` |
+| Tools | `src/tool/` | Orchestrate services: `UpWebiny`, `PackageJsonTool`, `WebinyConfigTool`, `DependencyGuard`, `UpgradeHistory` |
 | Upgrades | `src/upgrades/<version>/` | Version-specific upgrade scripts |
 
 ### Patterns
@@ -48,7 +48,7 @@ createContainer()  (async, src/container.ts)
   ├─ responder       → Responder (handles process exit and done signal)
   ├─ services        → PackageJson, PackageManager, Registry, References
   ├─ context         → resolves target version from npm registry, registers Context
-  ├─ tools           → Git, UpWebiny, PackageJsonTool, DependencyGuard, UpgradeHistory
+  ├─ tools           → Git, UpWebiny, PackageJsonTool, WebinyConfigTool, DependencyGuard, UpgradeHistory
   ├─ handler         → UpgradeHandler
   ├─ runner          → UpgradeRunner (loads upgrade scripts dynamically)
   └─ application     → Application
@@ -84,9 +84,44 @@ Use relative imports — `~/` aliases are not available in all contexts.
 | `Git` | `service/Git/index.js` | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo |
 | `UpWebiny` | `tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves. |
 | `PackageJsonTool` | `tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
+| `WebinyConfigTool` | `tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if file not found), `save(file): void`. See **WebinyConfigFile API** below. |
 | `DependencyGuard` | `tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. The handler records each step and skips already-executed upgrades. |
 | `Responder` | `base/Responder/index.js` | `success(duration: number, message?: string): never` / `error(message: string, duration: number, error?: Error): never` — terminates the process via `logger.done()` / `logger.fatal()` + `process.exit`. Injectable; `ProcessResponder` is the real implementation. |
+
+### WebinyConfigFile API
+
+The object returned by `WebinyConfigTool.read()`:
+
+```ts
+file.addChild(tag: string, options?: ChildOptions): void
+file.save(): void
+
+interface ChildOptions {
+    comment?: string;                       // renders as {/* comment */} above the element
+    props?: Record<string, string>;         // expression syntax: { passphrase: 'process.env.X || ""' }
+    children?: (builder: Builder) => void;  // nested children callback
+}
+```
+
+`addChild` behaviour:
+- **Not found** → inserts self-closing or block element after the last JSX fragment child
+- **Found, no `children` callback** → logs a warning and skips (duplicates are never added)
+- **Found, `children` callback provided** → structural merge: recurses into the existing element so each nested `addChild` applies the same logic one level deeper
+
+Example:
+```ts
+const webinyConfig = this.webinyConfigTool.read();
+webinyConfig.addChild("Infra.Env.IsProd", {
+    comment: "Encryption MUST always be configured for production environments.",
+    children: (children) => {
+        children.addChild("Infra.Encryption", {
+            props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }
+        });
+    }
+});
+this.webinyConfigTool.save(webinyConfig);
+```
 
 ### PackageJsonFile API
 
@@ -163,7 +198,7 @@ Vitest is the test runner. Scripts:
 | `createIntegrationContainer` | `UpgradeRunner`-level test container (synthetic fixture upgrades, mocked services). Used by `UpgradeRunner.test.ts` |
 | `createMockPackageJsonFile(overrides?)` | Canonical in-memory `PackageJsonFile` with sensible defaults. **Do not duplicate per-upgrade** — pass `overrides` for customisation |
 | `createMockLogger()` | Silent `Logger.Interface` with `vi.fn()` for every level |
-| `registerUpgradeDeps(container, file)` | Registers mock `PackageJsonTool`, `ReferencesService`, `PackageManagerService` (defaults to `name() → "yarn"`), and `Context` (`cwd="/project"`, `resolve()` joins from `/project`) for upgrade unit tests |
+| `registerUpgradeDeps(container, file)` | Registers mock `PackageJsonTool`, `ReferencesService`, `PackageManagerService` (defaults to `name() → "yarn"`), and `Context` (`cwd="/project"`, `resolve()` joins from `/project`) for upgrade unit tests. Does **not** register `WebinyConfigTool` — tests that need it must register a mock instance themselves (see `src/upgrades/6.3.0/Upgrade.test.ts`) |
 
 ### Fixtures
 
