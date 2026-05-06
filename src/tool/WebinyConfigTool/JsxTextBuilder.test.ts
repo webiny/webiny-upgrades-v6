@@ -48,7 +48,6 @@ describe("JsxTextBuilder", () => {
             { children: b => b.addChild("Child") },
             "    " // 4-space indent
         );
-        // child should be at 8 spaces
-        expect(result).toContain("        <Child />");
+        expect(result).toBe("    <Parent>\n        <Child />\n    </Parent>");
     });
 });

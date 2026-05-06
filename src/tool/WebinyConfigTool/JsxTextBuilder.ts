@@ -12,11 +12,12 @@ export class JsxTextBuilder {
         if (options.children) {
             const childLines: string[] = [];
             const childIndent = indent + "    ";
-            options.children({
-                addChild: (childTag: string, childOpts: WebinyConfigTool.ChildOptions = {}) => {
-                    childLines.push(this.buildElement(childTag, childOpts, childIndent));
+            const syntheticBuilder: WebinyConfigTool.Builder = {
+                addChild: (childTag: string, childOpts?: WebinyConfigTool.ChildOptions) => {
+                    childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
                 }
-            });
+            };
+            options.children(syntheticBuilder);
             lines.push(`${indent}<${tag}${propsStr}>`);
             lines.push(...childLines);
             lines.push(`${indent}</${tag}>`);
