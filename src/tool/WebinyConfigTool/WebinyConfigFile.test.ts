@@ -341,6 +341,21 @@ describe("WebinyConfigFile — insertBefore", () => {
         );
     });
 
+    it("warns and no-ops (no merge) when tag is an existing block element", () => {
+        const file = createFile(FIXTURE_WITH_BLOCK);
+        file.insertBefore("ProjectAws", "Infra.Env.IsProd", {
+            children: b => b.addChild("ShouldNotAppear")
+        });
+        file.save();
+        const content = read();
+        expect(content).not.toContain("<ShouldNotAppear");
+        const count = (content.match(/<Infra\.Env\.IsProd>/g) ?? []).length;
+        expect(count).toBe(1);
+        expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining("<Infra.Env.IsProd>")
+        );
+    });
+
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
         file.addChild("Infra.Env.IsProd", {
@@ -417,6 +432,21 @@ describe("WebinyConfigFile — insertAfter", () => {
         file.save();
         expect(read()).not.toContain("<ShouldNotAppear");
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<ProjectAws>"));
+    });
+
+    it("warns and no-ops (no merge) when tag is an existing block element", () => {
+        const file = createFile(FIXTURE_WITH_BLOCK);
+        file.insertAfter("ProjectAws", "Infra.Env.IsProd", {
+            children: b => b.addChild("ShouldNotAppear")
+        });
+        file.save();
+        const content = read();
+        expect(content).not.toContain("<ShouldNotAppear");
+        const count = (content.match(/<Infra\.Env\.IsProd>/g) ?? []).length;
+        expect(count).toBe(1);
+        expect(logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining("<Infra.Env.IsProd>")
+        );
     });
 
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
