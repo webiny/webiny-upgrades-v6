@@ -15,6 +15,7 @@ import { ContainerFeature } from "./base/Container/index.js";
 import { GitFeature } from "./service/Git/index.js";
 import { UpWebinyFeature } from "./tool/UpWebiny/index.js";
 import { PackageJsonToolFeature } from "./tool/PackageJsonTool/index.js";
+import { WebinyConfigToolFeature } from "./tool/WebinyConfigTool/index.js";
 import { DependencyGuardFeature } from "./tool/DependencyGuard/index.js";
 import { UpgradeHistoryFeature } from "./tool/UpgradeHistory/index.js";
 import { UpgradeHandlerFeature } from "./service/UpgradeHandler/index.js";
@@ -158,6 +159,7 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     GitFeature.register(container);
     UpWebinyFeature.register(container);
     PackageJsonToolFeature.register(container);
+    WebinyConfigToolFeature.register(container);
     DependencyGuardFeature.register(container);
     UpgradeHistoryFeature.register(container);
 
