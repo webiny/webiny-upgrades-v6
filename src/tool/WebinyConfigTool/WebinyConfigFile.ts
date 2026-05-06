@@ -1,0 +1,171 @@
+import { Project, SyntaxKind, ts } from "ts-morph";
+import type { SourceFile, JsxElement, JsxSelfClosingElement, JsxFragment, Node } from "ts-morph";
+import type { Logger } from "../../base/Logger/index.js";
+import type { IWebinyConfigFile, IWebinyConfigBuilder, AddChildOptions } from "./abstraction.js";
+
+export class WebinyConfigFile implements IWebinyConfigFile {
+    private readonly sourceFile: SourceFile;
+
+    public constructor(
+        filePath: string,
+        private readonly logger: Logger.Interface
+    ) {
+        const project = new Project({
+            compilerOptions: { jsx: ts.JsxEmit.ReactJSX },
+            skipAddingFilesFromTsConfig: true
+        });
+        this.sourceFile = project.addSourceFileAtPath(filePath);
+    }
+
+    public addChild(tag: string, options: AddChildOptions = {}): void {
+        this.addToContainer([], tag, options);
+    }
+
+    public save(): void {
+        this.sourceFile.saveSync();
+    }
+
+    private addToContainer(containerPath: string[], tag: string, options: AddChildOptions): void {
+        const container = this.resolveContainer(containerPath);
+        if (!container) {
+            this.logger.warn("No JSX fragment found in webiny.config.tsx, skipping");
+            return;
+        }
+
+        const realChildren = this.getRealChildren(container);
+        const existing = this.findChild(realChildren, tag);
+
+        if (existing) {
+            if (options.children && existing.getKind() === SyntaxKind.JsxElement) {
+                options.children(this.makeBuilder([...containerPath, tag]));
+                return;
+            }
+            this.logger.warn(`<${tag}> already exists, skipping`);
+            return;
+        }
+
+        // Re-query fresh refs after any prior insertions in this same callback batch.
+        const freshContainer = this.resolveContainer(containerPath)!;
+        const freshChildren = this.getRealChildren(freshContainer);
+        const indent = this.inferIndent(freshChildren, freshContainer);
+        const text = this.buildText(tag, options, indent);
+        const lastChild = freshChildren[freshChildren.length - 1];
+
+        if (lastChild) {
+            this.sourceFile.insertText(lastChild.getEnd(), "\n" + text);
+        } else {
+            this.insertIntoEmpty(freshContainer, text, indent);
+        }
+    }
+
+    private resolveContainer(containerPath: string[]): JsxFragment | JsxElement | null {
+        const fragment = this.sourceFile.getFirstDescendantByKind(SyntaxKind.JsxFragment);
+        if (!fragment) {
+            return null;
+        }
+        let current: JsxFragment | JsxElement = fragment;
+        for (const tag of containerPath) {
+            const child = this.findChild(this.getRealChildren(current), tag);
+            if (!child || child.getKind() !== SyntaxKind.JsxElement) {
+                return null;
+            }
+            current = child as JsxElement;
+        }
+        return current;
+    }
+
+    private makeBuilder(containerPath: string[]): IWebinyConfigBuilder {
+        return {
+            addChild: (tag: string, opts: AddChildOptions = {}) => {
+                this.addToContainer(containerPath, tag, opts);
+            }
+        };
+    }
+
+    private getRealChildren(container: JsxFragment | JsxElement): Node[] {
+        return container.getJsxChildren().filter(c => c.getKind() !== SyntaxKind.JsxText);
+    }
+
+    private findChild(children: Node[], tag: string): Node | undefined {
+        return children.find(c => {
+            if (c.getKind() === SyntaxKind.JsxElement) {
+                return (c as JsxElement).getOpeningElement().getTagNameNode().getText() === tag;
+            }
+            if (c.getKind() === SyntaxKind.JsxSelfClosingElement) {
+                return (c as JsxSelfClosingElement).getTagNameNode().getText() === tag;
+            }
+            return false;
+        });
+    }
+
+    private inferIndent(realChildren: Node[], container: JsxFragment | JsxElement): string {
+        if (realChildren.length > 0) {
+            const pos = realChildren[0].getStart();
+            const src = this.sourceFile.getFullText();
+            const lineStart = src.lastIndexOf("\n", pos) + 1;
+            return " ".repeat(pos - lineStart);
+        }
+        if (container.getKind() === SyntaxKind.JsxFragment) {
+            return "            "; // 12-space fallback for empty fragments
+        }
+        const pos = container.getStart();
+        const src = this.sourceFile.getFullText();
+        const lineStart = src.lastIndexOf("\n", pos) + 1;
+        return " ".repeat(pos - lineStart + 4);
+    }
+
+    private buildText(tag: string, options: AddChildOptions, indent: string): string {
+        const lines: string[] = [];
+        const propsStr = this.buildPropsStr(options.props);
+
+        if (options.comment) {
+            lines.push(`${indent}{/* ${options.comment} */}`);
+        }
+
+        if (options.children) {
+            const childLines: string[] = [];
+            const childIndent = indent + "    ";
+            options.children({
+                addChild: (childTag: string, childOpts: AddChildOptions = {}) => {
+                    childLines.push(this.buildText(childTag, childOpts, childIndent));
+                }
+            });
+            lines.push(`${indent}<${tag}${propsStr}>`);
+            lines.push(...childLines);
+            lines.push(`${indent}</${tag}>`);
+        } else {
+            lines.push(`${indent}<${tag}${propsStr} />`);
+        }
+
+        return lines.join("\n");
+    }
+
+    private buildPropsStr(props?: Record<string, string>): string {
+        if (!props || Object.keys(props).length === 0) {
+            return "";
+        }
+        return (
+            " " +
+            Object.entries(props)
+                .map(([k, v]) => `${k}={${v}}`)
+                .join(" ")
+        );
+    }
+
+    private insertIntoEmpty(
+        container: JsxFragment | JsxElement,
+        text: string,
+        indent: string
+    ): void {
+        const parentIndent = " ".repeat(Math.max(0, indent.length - 4));
+        let closingPos: number;
+
+        if (container.getKind() === SyntaxKind.JsxFragment) {
+            closingPos = (container as JsxFragment).getClosingFragment().getStart();
+        } else {
+            closingPos = (container as JsxElement).getClosingElement().getStart();
+        }
+
+        this.sourceFile.insertText(closingPos, "\n" + text + "\n" + parentIndent);
+    }
+}
