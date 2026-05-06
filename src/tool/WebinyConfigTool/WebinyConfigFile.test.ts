@@ -351,9 +351,7 @@ describe("WebinyConfigFile — insertBefore", () => {
         expect(content).not.toContain("<ShouldNotAppear");
         const count = (content.match(/<Infra\.Env\.IsProd>/g) ?? []).length;
         expect(count).toBe(1);
-        expect(logger.warn).toHaveBeenCalledWith(
-            expect.stringContaining("<Infra.Env.IsProd>")
-        );
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<Infra.Env.IsProd>"));
     });
 
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
@@ -444,9 +442,7 @@ describe("WebinyConfigFile — insertAfter", () => {
         expect(content).not.toContain("<ShouldNotAppear");
         const count = (content.match(/<Infra\.Env\.IsProd>/g) ?? []).length;
         expect(count).toBe(1);
-        expect(logger.warn).toHaveBeenCalledWith(
-            expect.stringContaining("<Infra.Env.IsProd>")
-        );
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<Infra.Env.IsProd>"));
     });
 
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
