@@ -95,6 +95,8 @@ The object returned by `WebinyConfigTool.read()`:
 
 ```ts
 file.addChild(tag: string, options?: ChildOptions): void
+file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
+file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
 file.save(): void
 
 interface ChildOptions {
@@ -109,10 +111,16 @@ interface ChildOptions {
 - **Found, no `children` callback** → logs a warning and skips (duplicates are never added)
 - **Found, `children` callback provided** → structural merge: recurses into the existing element so each nested `addChild` applies the same logic one level deeper
 
-Example:
+`insertBefore(ref, tag, options)` / `insertAfter(ref, tag, options)` behaviour:
+- **`ref` not found** → warns (`<ref> not found, inserting <tag> at end`) and falls back to append
+- **`tag` already exists** → warns and no-ops — **no** structural merge even if `options.children` is provided; use `addChild` for structural merge
+- **Normal path** → inserts `tag` immediately before / after the first occurrence of `ref` among direct children; indent is inferred from `ref`'s column offset
+- Both methods are available at every nesting level via the `Builder` passed to `addChild`'s `children` callback
+
+Example — top-level positioning:
 ```ts
 const webinyConfig = this.webinyConfigTool.read();
-webinyConfig.addChild("Infra.Env.IsProd", {
+webinyConfig.insertBefore("ProjectAws", "Infra.Env.IsProd", {
     comment: "Encryption MUST always be configured for production environments.",
     children: (children) => {
         children.addChild("Infra.Encryption", {
@@ -121,6 +129,15 @@ webinyConfig.addChild("Infra.Env.IsProd", {
     }
 });
 this.webinyConfigTool.save(webinyConfig);
+```
+
+Example — nested positioning via `addChild` structural merge:
+```ts
+webinyConfig.addChild("Infra.Env.IsProd", {
+    children: (b) => {
+        b.insertAfter("Infra.Encryption", "Infra.NewFeature");
+    }
+});
 ```
 
 ### PackageJsonFile API

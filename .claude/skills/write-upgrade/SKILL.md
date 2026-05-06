@@ -97,6 +97,8 @@ The object returned by `WebinyConfigTool.read()`:
 
 ```ts
 file.addChild(tag: string, options?: ChildOptions): void
+file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
+file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
 file.save(): void
 
 interface ChildOptions {
@@ -110,6 +112,12 @@ interface ChildOptions {
 - **Not found** → inserts after the last JSX fragment child (self-closing if no `children`, block element if `children` provided)
 - **Found, no `children` callback** → logs a warning and skips (never creates duplicates)
 - **Found, `children` callback provided** → structural merge: recurses into the existing element
+
+`insertBefore(ref, tag, options)` / `insertAfter(ref, tag, options)` behaviour:
+- **`ref` not found** → warns and falls back to append at end
+- **`tag` already exists** → warns and no-ops — **no** structural merge, even if `options.children` provided
+- **Normal path** → inserts `tag` immediately before/after the first occurrence of `ref`; indent is inferred from `ref`'s column offset
+- Available at every nesting level via the `Builder` passed to a `children` callback
 
 ### PackageJsonFile API
 
