@@ -233,3 +233,4 @@ yarn lint:fix && yarn && yarn build && yarn test && yarn adio:check
 - Type check: `yarn build`
 - Prefer `loadOrThrow()` over `load()` + null guard when throwing on null immediately
 - Windows compatibility: always use `path.join()` / `path.resolve()` for file paths — never string concatenation or hardcoded slashes; use `pathToFileURL()` for dynamic imports
+- **Docs must be updated with every feature** — after implementing any new tool, service, or capability, update `AGENTS.md` (Available Services table + API section), `README.md` (upgrade script example if applicable), and `.claude/skills/write-upgrade/SKILL.md` (Available Dependencies table). No feature ships without its docs.
