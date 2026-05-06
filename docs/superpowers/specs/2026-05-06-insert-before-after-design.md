@@ -21,27 +21,44 @@ interface IWebinyConfigBuilder {
 `tag` — the new element to insert.  
 `options` — same `ChildOptions` as `addChild`: `comment`, `props`, `children`.
 
-Both methods are available at every nesting level — the builder returned inside a `children` callback has all three methods scoped to that container.
+Both methods are available at every nesting level — the builder returned inside a `children` callback exposes all three methods, scoped to that container. `makeBuilder` must forward `insertBefore` / `insertAfter` with the same `containerPath`.
 
 ## Behaviour
 
-### Normal path (ref found, tag absent)
-Insert `tag` immediately before / after `ref`'s position in the current container's direct children. Build the element text using `JsxTextBuilder` with the same indentation as the ref element.
+### Check order
 
-### Ref not found
+For both `insertBefore` and `insertAfter`, checks run in this order:
+1. No JSX fragment → warn, no-op
+2. Container path cannot be resolved → warn, no-op
+3. `tag` already exists among direct children → warn, no-op (**no** structural merge — see note below)
+4. `ref` not found → warn, fall back to append at end
+5. Normal insertion at the requested position
+
+### Normal path (ref found, tag absent)
+
+Insert `tag` immediately before / after `ref`'s position in the current container's direct children. Indent is inferred from `ref`'s column offset (see **Indentation** below).
+
+If `ref` appears more than once, the first occurrence in document order is used.
+
+### Ref not found (step 4)
+
 ```
 logger.warn(`<${ref}> not found, inserting <${tag}> at end`)
 ```
-Fall back to appending after the last child (same as `addChild` with no positioning).
 
-### Tag already exists (duplicate)
+Fall back to appending after the last child — same as `addChild` with no positioning.
+
+### Tag already exists (step 3)
+
 ```
 logger.warn(`<${tag}> already exists, skipping`)
 ```
-No-op. Duplicate detection is scoped to the **current container's direct children only** — identical to `addChild`. Runs before any position lookup.
 
-### No JSX fragment
-Same as `addChild`: warn and no-op.
+No-op. Unlike `addChild`, `insertBefore` / `insertAfter` do **not** perform structural merge even when `options.children` is provided. Positioning is meaningless for an already-existing element; the caller should use `addChild` with a `children` callback for structural merge.
+
+### No JSX fragment / path unresolvable (steps 1–2)
+
+Same behaviour as `addChild`.
 
 ## File Structure
 
@@ -50,7 +67,8 @@ src/tool/WebinyConfigTool/
   abstraction.ts              — add insertBefore / insertAfter to IWebinyConfigBuilder
   JsxTextBuilder.ts           — NEW: pure text construction, no ts-morph dependency
   JsxTextBuilder.test.ts      — NEW: pure unit tests (no tmp dirs)
-  WebinyConfigFile.ts         — slim down: delegate text building to JsxTextBuilder
+  WebinyConfigFile.ts         — slim down: delegate text building to JsxTextBuilder;
+                                add insertBefore / insertAfter; update makeBuilder
   WebinyConfigFile.test.ts    — add insertBefore / insertAfter test cases
 ```
 
@@ -58,18 +76,22 @@ All other files (`WebinyConfigTool.ts`, `feature.ts`, `index.ts`) are unchanged.
 
 ## JsxTextBuilder
 
-Stateless class with no ts-morph dependency. Receives plain strings and returns strings.
+Stateless class, no ts-morph dependency. Takes plain strings and returns strings.
 
 ```ts
 class JsxTextBuilder {
     buildElement(tag: string, options: WebinyConfigTool.ChildOptions, indent: string): string
-    buildPropsStr(props?: Record<string, string>): string
+    private buildPropsStr(props?: Record<string, string>): string
 }
 ```
 
-`buildElement` produces the full text block: optional `{/* comment */}` line, then self-closing `<Tag />` or block `<Tag>…</Tag>` with recursively built children at `indent + "    "`. The `children` callback in `ChildOptions` is invoked with a synthetic builder that collects child lines — same two-path design as today (new elements use text capture, never live AST mutations inside `buildElement`).
+`buildElement` produces the full text block: optional `{/* comment */}` line, then self-closing `<Tag />` or block `<Tag>…</Tag>` with recursively built children at `indent + "    "`.
+
+The `children` callback in `ChildOptions` is invoked with a **synthetic builder** that collects child lines into an array. This builder only supports `addChild` (appending). `insertBefore` / `insertAfter` on this synthetic builder also append (no existing siblings exist when building from scratch — no warning is emitted). This is the same two-path design as today: new elements use text capture, live AST mutations only happen in the structural-merge path.
 
 `WebinyConfigFile` removes its own `buildText` and `buildPropsStr` methods and delegates to a `JsxTextBuilder` instance.
+
+`buildPropsStr` is private — tested indirectly through `buildElement`.
 
 ## InsertPosition type (internal)
 
@@ -80,33 +102,48 @@ type InsertPosition =
     | { mode: 'after';  ref: string }
 ```
 
-`addToContainer` gains an optional `position: InsertPosition = { mode: 'append' }` parameter. `insertBefore` / `insertAfter` call `addToContainer` with the appropriate mode after checking duplicates (which `addToContainer` already handles).
+`addToContainer` gains an optional `position: InsertPosition = { mode: 'append' }` parameter. `insertBefore` / `insertAfter` call `addToContainer` with the appropriate mode after duplicate detection (which `addToContainer` handles internally).
 
-Insertion strategy:
-- `after`: insert at `refChild.getEnd()` with `"\n" + text` — same pattern as the existing append path.
-- `before`: find `ref`'s index in `realChildren`. If index > 0, insert after `realChildren[index - 1].getEnd()` with `"\n" + text` (reuses the same pattern). If index === 0 (ref is the first child), insert into the container using `insertIntoEmpty`-style logic before the first child.
+## Insertion strategy
 
-Indentation for the inserted element is inferred from the ref element's column offset, not from the first child — so it matches the surrounding elements regardless of where in the list `ref` sits.
+**`after` mode:** insert at `refChild.getEnd()` with `"\n" + text` — same pattern as the existing append path.
+
+**`before` mode:**
+- If `ref` is not the first child (index > 0): insert after `realChildren[index - 1].getEnd()` with `"\n" + text` — reuses the same append-after-sibling pattern.
+- If `ref` is the first child (index === 0): insert after the container's opening tag with `"\n" + text`. For a fragment, use `fragment.getOpeningFragment().getEnd()`; for a `JsxElement`, use `container.getOpeningElement().getEnd()`.
+
+## Indentation
+
+Add a new helper to `WebinyConfigFile`:
+
+```ts
+private inferIndentFromNode(node: Node): string
+```
+
+Returns the column offset of `node.getStart()` from the start of its line — i.e. the number of spaces between the last `\n` and the `<`. Used by `before`/`after` modes to match the surrounding elements' indentation.
+
+`addChild` continues to use `inferIndent` (infers from first existing child or container fallback). `insertBefore` / `insertAfter` use `inferIndentFromNode(refChild)` when the ref is found, and fall back to `inferIndent` when the ref is not found and they append.
 
 ## Testing
 
 ### `JsxTextBuilder.test.ts` (pure unit tests, no files)
 
 - `buildElement` renders a self-closing element with no options
-- `buildElement` renders comment above element
+- `buildElement` renders a comment above the element
 - `buildElement` renders props as `{expression}` attributes
-- `buildElement` renders block element with nested children
+- `buildElement` renders a block element with nested `addChild` children
 - `buildElement` indents nested children one level deeper
-- `buildPropsStr` returns empty string for no props
-- `buildPropsStr` joins multiple props with spaces
+- `buildElement` with nested `insertBefore` / `insertAfter` on the synthetic builder appends (no error, no warning)
 
 ### `WebinyConfigFile.test.ts` (additions)
 
 - `insertBefore` places element immediately before the ref
 - `insertAfter` places element immediately after the ref
+- `insertBefore` with ref as the first child places element before it
 - `insertBefore` warns and appends at end when ref not found
 - `insertAfter` warns and appends at end when ref not found
 - `insertBefore` warns and no-ops when tag already exists
 - `insertAfter` warns and no-ops when tag already exists
-- `insertBefore` works inside a `children` callback (nested level)
-- `insertAfter` works inside a `children` callback (nested level)
+- `insertBefore` / `insertAfter` do not perform structural merge when tag exists and children callback is provided — warn and no-op
+- `insertBefore` works inside a `children` callback on an **existing** container (real AST, `makeBuilder` path)
+- `insertAfter` works inside a `children` callback on an **existing** container (real AST, `makeBuilder` path)
