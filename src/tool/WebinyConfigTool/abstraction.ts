@@ -1,16 +1,16 @@
 import { createAbstraction } from "../../utils/createAbstraction.js";
 
-export interface AddChildOptions {
+interface AddChildOptions {
     comment?: string;
     props?: Record<string, string>;
     children?: (builder: IWebinyConfigBuilder) => void;
 }
 
-export interface IWebinyConfigBuilder {
+interface IWebinyConfigBuilder {
     addChild(tag: string, options?: AddChildOptions): void;
 }
 
-export interface IWebinyConfigFile extends IWebinyConfigBuilder {
+interface IWebinyConfigFile extends IWebinyConfigBuilder {
     save(): void;
 }
 

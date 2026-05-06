@@ -1,9 +1,9 @@
 import { Project, SyntaxKind, ts } from "ts-morph";
 import type { SourceFile, JsxElement, JsxSelfClosingElement, JsxFragment, Node } from "ts-morph";
 import type { Logger } from "../../base/Logger/index.js";
-import type { IWebinyConfigFile, IWebinyConfigBuilder, AddChildOptions } from "./abstraction.js";
+import type { WebinyConfigTool } from "./abstraction.js";
 
-export class WebinyConfigFile implements IWebinyConfigFile {
+export class WebinyConfigFile implements WebinyConfigTool.File {
     private readonly sourceFile: SourceFile;
 
     public constructor(
@@ -17,7 +17,7 @@ export class WebinyConfigFile implements IWebinyConfigFile {
         this.sourceFile = project.addSourceFileAtPath(filePath);
     }
 
-    public addChild(tag: string, options: AddChildOptions = {}): void {
+    public addChild(tag: string, options: WebinyConfigTool.ChildOptions = {}): void {
         this.addToContainer([], tag, options);
     }
 
@@ -25,10 +25,20 @@ export class WebinyConfigFile implements IWebinyConfigFile {
         this.sourceFile.saveSync();
     }
 
-    private addToContainer(containerPath: string[], tag: string, options: AddChildOptions): void {
+    private addToContainer(
+        containerPath: string[],
+        tag: string,
+        options: WebinyConfigTool.ChildOptions
+    ): void {
+        const fragment = this.sourceFile.getFirstDescendantByKind(SyntaxKind.JsxFragment);
+        if (!fragment) {
+            this.logger.warn("No JSX fragment found in webiny.config.tsx, skipping");
+            return;
+        }
         const container = this.resolveContainer(containerPath);
         if (!container) {
-            this.logger.warn("No JSX fragment found in webiny.config.tsx, skipping");
+            const missing = containerPath[containerPath.length - 1];
+            this.logger.warn(`<${missing}> not found in webiny.config.tsx, cannot add children`);
             return;
         }
 
@@ -74,9 +84,9 @@ export class WebinyConfigFile implements IWebinyConfigFile {
         return current;
     }
 
-    private makeBuilder(containerPath: string[]): IWebinyConfigBuilder {
+    private makeBuilder(containerPath: string[]): WebinyConfigTool.Builder {
         return {
-            addChild: (tag: string, opts: AddChildOptions = {}) => {
+            addChild: (tag: string, opts: WebinyConfigTool.ChildOptions = {}) => {
                 this.addToContainer(containerPath, tag, opts);
             }
         };
@@ -114,7 +124,7 @@ export class WebinyConfigFile implements IWebinyConfigFile {
         return " ".repeat(pos - lineStart + 4);
     }
 
-    private buildText(tag: string, options: AddChildOptions, indent: string): string {
+    private buildText(tag: string, options: WebinyConfigTool.ChildOptions, indent: string): string {
         const lines: string[] = [];
         const propsStr = this.buildPropsStr(options.props);
 
@@ -126,7 +136,7 @@ export class WebinyConfigFile implements IWebinyConfigFile {
             const childLines: string[] = [];
             const childIndent = indent + "    ";
             options.children({
-                addChild: (childTag: string, childOpts: AddChildOptions = {}) => {
+                addChild: (childTag: string, childOpts: WebinyConfigTool.ChildOptions = {}) => {
                     childLines.push(this.buildText(childTag, childOpts, childIndent));
                 }
             });
