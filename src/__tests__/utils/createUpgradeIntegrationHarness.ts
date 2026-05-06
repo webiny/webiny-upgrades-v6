@@ -21,6 +21,7 @@ import { UpgradeRunner as UpgradeRunnerImpl } from "../../service/UpgradeRunner/
 import { UpgradesDirectory } from "../../service/UpgradeRunner/UpgradesDirectory.js";
 import { DependencyGuard } from "../../tool/DependencyGuard/abstraction.js";
 import { PackageJsonTool as PackageJsonToolImpl } from "../../tool/PackageJsonTool/PackageJsonTool.js";
+import { WebinyConfigTool as WebinyConfigToolImpl } from "../../tool/WebinyConfigTool/WebinyConfigTool.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/abstraction.js";
 import { UpgradeHistory as UpgradeHistoryImpl } from "../../tool/UpgradeHistory/UpgradeHistory.js";
 import { UpWebiny } from "../../tool/UpWebiny/abstraction.js";
@@ -156,6 +157,7 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
 
     container.register(PackageJsonServiceImpl);
     container.register(PackageJsonToolImpl);
+    container.register(WebinyConfigToolImpl);
     container.register(UpWebinyImpl);
     container.register(UpgradeHistoryImpl);
     container.register(UpgradeHandler);

@@ -4,6 +4,7 @@ import type { Container as DIContainer } from "@webiny/di";
 import { Context } from "../../base/Context/index.js";
 import { Version } from "../../base/Version/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { PackageManagerService } from "../../service/PackageManager/index.js";
 import { ReferencesService } from "../../service/References/index.js";
@@ -29,6 +30,10 @@ export const registerUpgradeDeps = (
             }
             return file;
         }),
+        save: vi.fn()
+    });
+    container.registerInstance(WebinyConfigTool, {
+        read: vi.fn().mockReturnValue({ addChild: vi.fn(), save: vi.fn() }),
         save: vi.fn()
     });
     container.registerInstance(ReferencesService, {

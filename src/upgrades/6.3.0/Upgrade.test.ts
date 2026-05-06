@@ -3,16 +3,14 @@ import { Container } from "@webiny/di";
 import { Upgrade as Upgrade630 } from "./Upgrade.js";
 import { Upgrade } from "../../base/Upgrade/abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { PackageManagerService } from "../../service/PackageManager/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { registerUpgradeDeps } from "../../__tests__/utils/mockUpgradeDeps.js";
 import { Version } from "../../base/Version/index.js";
-import { addInfraEncryption } from "./addInfraEncryption.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 import type { PackageManagerName } from "../../service/PackageManager/detect.js";
-
-vi.mock("./addInfraEncryption.js", () => ({ addInfraEncryption: vi.fn() }));
 
 const v = (version: string) => Version.create(version);
 
@@ -32,6 +30,11 @@ const createContainer = (
         version: vi.fn(),
         name: vi.fn().mockReturnValue(pmName),
         update: vi.fn().mockResolvedValue(undefined)
+    });
+    const mockWebinyConfigFile = { addChild: vi.fn(), save: vi.fn() };
+    container.registerInstance(WebinyConfigTool, {
+        read: vi.fn().mockReturnValue(mockWebinyConfigFile),
+        save: vi.fn()
     });
     container.register(Upgrade630);
     return container;
@@ -97,9 +100,7 @@ describe("Upgrade 6.3.0 - execute", () => {
     it("sets typescript devDependency to 6.0.3", async () => {
         const file = createMockPackageJsonFile();
         const upgrade = createContainer(file).resolve(Upgrade);
-
         await upgrade.execute();
-
         expect(file.getDevDependency("typescript")).toBe("6.0.3");
     });
 
@@ -108,26 +109,53 @@ describe("Upgrade 6.3.0 - execute", () => {
         const container = createContainer(file);
         const packageJsonTool = container.resolve(PackageJsonTool);
         const upgrade = container.resolve(Upgrade);
-
         await upgrade.execute();
-
         expect(packageJsonTool.save).toHaveBeenCalledWith(file);
     });
 
     it("throws when package.json cannot be loaded", async () => {
         const container = createContainer(null);
         const upgrade = container.resolve(Upgrade);
-
         await expect(upgrade.execute()).rejects.toThrow(PackageJsonLoadError);
+    });
+
+    it("reads webiny.config.tsx via webinyConfigTool", async () => {
+        const container = createContainer();
+        const webinyConfigTool = container.resolve(WebinyConfigTool);
+        const upgrade = container.resolve(Upgrade);
+        await upgrade.execute();
+        expect(webinyConfigTool.read).toHaveBeenCalled();
+    });
+
+    it("calls addChild on the config file with Infra.Env.IsProd and encryption comment", async () => {
+        const container = createContainer();
+        const webinyConfigTool = container.resolve(WebinyConfigTool);
+        const upgrade = container.resolve(Upgrade);
+        await upgrade.execute();
+        const mockFile = vi.mocked(webinyConfigTool.read).mock.results[0].value;
+        expect(mockFile.addChild).toHaveBeenCalledWith(
+            "Infra.Env.IsProd",
+            expect.objectContaining({
+                comment: expect.stringContaining("Encryption"),
+                children: expect.any(Function)
+            })
+        );
+    });
+
+    it("saves the webiny config via webinyConfigTool", async () => {
+        const container = createContainer();
+        const webinyConfigTool = container.resolve(WebinyConfigTool);
+        const upgrade = container.resolve(Upgrade);
+        await upgrade.execute();
+        const mockFile = vi.mocked(webinyConfigTool.read).mock.results[0].value;
+        expect(webinyConfigTool.save).toHaveBeenCalledWith(mockFile);
     });
 
     it("calls packageManagerService.update when project uses yarn", async () => {
         const container = createContainer(createMockPackageJsonFile(), "yarn");
         const packageManagerService = container.resolve(PackageManagerService);
         const upgrade = container.resolve(Upgrade);
-
         await upgrade.execute();
-
         expect(packageManagerService.update).toHaveBeenCalledWith("4.14.1");
     });
 
@@ -135,17 +163,7 @@ describe("Upgrade 6.3.0 - execute", () => {
         const container = createContainer(createMockPackageJsonFile(), "npm");
         const packageManagerService = container.resolve(PackageManagerService);
         const upgrade = container.resolve(Upgrade);
-
         await upgrade.execute();
-
         expect(packageManagerService.update).not.toHaveBeenCalled();
-    });
-
-    it("calls addInfraEncryption with the resolved webiny.config.tsx path", async () => {
-        const upgrade = createContainer().resolve(Upgrade);
-
-        await upgrade.execute();
-
-        expect(vi.mocked(addInfraEncryption)).toHaveBeenCalledWith("/project/webiny.config.tsx");
     });
 });
