@@ -2,9 +2,11 @@ import { Project, SyntaxKind, ts } from "ts-morph";
 import type { SourceFile, JsxElement, JsxSelfClosingElement, JsxFragment, Node } from "ts-morph";
 import type { Logger } from "../../base/Logger/index.js";
 import type { WebinyConfigTool } from "./abstraction.js";
+import { JsxTextBuilder } from "./JsxTextBuilder.js";
 
 export class WebinyConfigFile implements WebinyConfigTool.File {
     private readonly sourceFile: SourceFile;
+    private readonly jsxTextBuilder = new JsxTextBuilder();
 
     public constructor(
         filePath: string,
@@ -65,7 +67,7 @@ export class WebinyConfigFile implements WebinyConfigTool.File {
         }
         const freshChildren = this.getRealChildren(freshContainer);
         const indent = this.inferIndent(freshChildren, freshContainer);
-        const text = this.buildText(tag, options, indent);
+        const text = this.jsxTextBuilder.buildElement(tag, options, indent);
         const lastChild = freshChildren[freshChildren.length - 1];
 
         if (lastChild) {
@@ -129,44 +131,6 @@ export class WebinyConfigFile implements WebinyConfigTool.File {
         const src = this.sourceFile.getFullText();
         const lineStart = src.lastIndexOf("\n", pos) + 1;
         return " ".repeat(pos - lineStart + 4);
-    }
-
-    private buildText(tag: string, options: WebinyConfigTool.ChildOptions, indent: string): string {
-        const lines: string[] = [];
-        const propsStr = this.buildPropsStr(options.props);
-
-        if (options.comment) {
-            lines.push(`${indent}{/* ${options.comment} */}`);
-        }
-
-        if (options.children) {
-            const childLines: string[] = [];
-            const childIndent = indent + "    ";
-            options.children({
-                addChild: (childTag: string, childOpts: WebinyConfigTool.ChildOptions = {}) => {
-                    childLines.push(this.buildText(childTag, childOpts, childIndent));
-                }
-            });
-            lines.push(`${indent}<${tag}${propsStr}>`);
-            lines.push(...childLines);
-            lines.push(`${indent}</${tag}>`);
-        } else {
-            lines.push(`${indent}<${tag}${propsStr} />`);
-        }
-
-        return lines.join("\n");
-    }
-
-    private buildPropsStr(props?: Record<string, string>): string {
-        if (!props || Object.keys(props).length === 0) {
-            return "";
-        }
-        return (
-            " " +
-            Object.entries(props)
-                .map(([k, v]) => `${k}={${v}}`)
-                .join(" ")
-        );
     }
 
     private insertIntoEmpty(
