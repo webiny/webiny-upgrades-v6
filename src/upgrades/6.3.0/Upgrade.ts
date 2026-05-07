@@ -26,7 +26,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         this.packageJsonTool.save(packageJson);
 
         const webinyConfig = this.webinyConfigTool.read();
-        webinyConfig.addChild("Infra.Env.IsProd", {
+        webinyConfig.jsx.addChild("Infra.Env.IsProd", {
             comment: "Encryption MUST always be configured for production environments.",
             children: children => {
                 children.addChild("Infra.Encryption", {

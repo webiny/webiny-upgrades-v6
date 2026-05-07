@@ -37,11 +37,12 @@ describe("WebinyConfigTool", () => {
         fs.rmSync(tmpDir, { recursive: true });
     });
 
-    it("read() returns a file object when webiny.config.tsx exists", () => {
+    it("read() returns a file object with jsx and imports sub-objects", () => {
         fs.writeFileSync(path.join(tmpDir, "webiny.config.tsx"), "export const x = 1;");
         const tool = createContainer(tmpDir).resolve(WebinyConfigToolAbstraction);
         const file = tool.read();
-        expect(typeof file.addChild).toBe("function");
+        expect(typeof file.jsx.addChild).toBe("function");
+        expect(typeof file.imports.add).toBe("function");
         expect(typeof file.save).toBe("function");
     });
 
@@ -52,9 +53,8 @@ describe("WebinyConfigTool", () => {
 
     it("save() calls file.save()", () => {
         const mockFile = {
-            addChild: vi.fn(),
-            insertBefore: vi.fn(),
-            insertAfter: vi.fn(),
+            imports: { add: vi.fn(), remove: vi.fn() },
+            jsx: { addChild: vi.fn(), insertBefore: vi.fn(), insertAfter: vi.fn() },
             save: vi.fn()
         };
         const tool = createContainer(tmpDir).resolve(WebinyConfigToolAbstraction);

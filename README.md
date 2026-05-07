@@ -95,10 +95,12 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         this.packageJsonTool.save(packageJson);
 
         // Mutate webiny.config.tsx
-        // addChild — structural merge into existing parents (warns and skips duplicates)
-        // insertBefore / insertAfter — position a new element relative to a named sibling
+        // file.imports.add — add named imports (merges into existing declaration, skips duplicates)
+        // file.jsx.addChild — structural merge into existing parents (warns and skips duplicates)
+        // file.jsx.insertBefore / insertAfter — position a new element relative to a named sibling
         const webinyConfig = this.webinyConfigTool.read();
-        webinyConfig.addChild("Infra.Env.IsProd", {
+        webinyConfig.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
+        webinyConfig.jsx.addChild("Infra.Env.IsProd", {
             children: (children) => {
                 children.addChild("Infra.Encryption", {
                     props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }

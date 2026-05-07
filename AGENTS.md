@@ -86,7 +86,7 @@ Use relative imports — `~/` aliases are not available in all contexts.
 | `Git` | `service/Git/index.js` | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo |
 | `UpWebiny` | `tool/UpWebiny/index.js` | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves. |
 | `PackageJsonTool` | `tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
-| `WebinyConfigTool` | `tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if file not found), `save(file): void`. See **WebinyConfigFile API** below. |
+| `WebinyConfigTool` | `tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if file not found), `save(file): void`. The returned file exposes `file.imports` and `file.jsx` sub-objects. See **WebinyConfigFile API** below. |
 | `DependencyGuard` | `tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. The handler records each step and skips already-executed upgrades. |
 | `Responder` | `base/Responder/index.js` | `success(duration: number, message?: string): never` / `error(message: string, duration: number, error?: Error): never` — terminates the process via `logger.done()` / `logger.fatal()` + `process.exit`. Injectable; `ProcessResponder` is the real implementation. |
@@ -96,33 +96,52 @@ Use relative imports — `~/` aliases are not available in all contexts.
 The object returned by `WebinyConfigTool.read()`:
 
 ```ts
-file.addChild(tag: string, options?: ChildOptions): void
-file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
-file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+// imports sub-object
+file.imports.add(options: ImportOptions): void
+file.imports.remove(options: RemoveImportOptions): void
+
+// jsx sub-object
+file.jsx.addChild(tag: string, options?: ChildOptions): void
+file.jsx.insertBefore(ref: string, tag: string, options?: ChildOptions): void
+file.jsx.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+
+// file
 file.save(): void
+
+type ImportEntry = string | Record<string, string>;
+interface ImportOptions {
+    package: string;
+    imports: ImportEntry[];        // plain string or { originalName: localAlias }
+}
+
+interface RemoveImportOptions {
+    package: string;
+    imports?: string[];            // omit to remove the entire declaration
+}
 
 interface ChildOptions {
     comment?: string;                       // renders as {/* comment */} above the element
     props?: Record<string, string>;         // expression syntax: { passphrase: 'process.env.X || ""' }
-    children?: (builder: Builder) => void;  // nested children callback
+    children?: (jsx: Jsx) => void;          // nested children callback
 }
 ```
 
-`addChild` behaviour:
+`jsx.addChild` behaviour:
 - **Not found** → inserts self-closing or block element after the last JSX fragment child
 - **Found, no `children` callback** → logs a warning and skips (duplicates are never added)
 - **Found, `children` callback provided** → structural merge: recurses into the existing element so each nested `addChild` applies the same logic one level deeper
 
-`insertBefore(ref, tag, options)` / `insertAfter(ref, tag, options)` behaviour:
+`jsx.insertBefore(ref, tag, options)` / `jsx.insertAfter(ref, tag, options)` behaviour:
 - **`ref` not found** → warns (`<ref> not found, inserting <tag> at end`) and falls back to append
 - **`tag` already exists** → warns and no-ops — **no** structural merge even if `options.children` is provided; use `addChild` for structural merge
 - **Normal path** → inserts `tag` immediately before / after the first occurrence of `ref` among direct children; indent is inferred from `ref`'s column offset
-- Both methods are available at every nesting level via the `Builder` passed to `addChild`'s `children` callback
+- Both methods are available at every nesting level via the `Jsx` object passed to `addChild`'s `children` callback
 
-Example — top-level positioning:
+Example — imports + top-level positioning:
 ```ts
 const webinyConfig = this.webinyConfigTool.read();
-webinyConfig.insertBefore("ProjectAws", "Infra.Env.IsProd", {
+webinyConfig.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
+webinyConfig.jsx.insertBefore("ProjectAws", "Infra.Env.IsProd", {
     comment: "Encryption MUST always be configured for production environments.",
     children: (children) => {
         children.addChild("Infra.Encryption", {
@@ -135,7 +154,7 @@ this.webinyConfigTool.save(webinyConfig);
 
 Example — nested positioning via `addChild` structural merge:
 ```ts
-webinyConfig.addChild("Infra.Env.IsProd", {
+webinyConfig.jsx.addChild("Infra.Env.IsProd", {
     children: (b) => {
         b.insertAfter("Infra.Encryption", "Infra.NewFeature");
     }
@@ -243,10 +262,10 @@ When coverage gaps appear, apply one of two approaches — never mix them:
 After every change, run:
 
 ```bash
-yarn lint:fix && yarn && yarn build && yarn test && yarn adio:check
+yarn && yarn build && yarn adio:check && yarn format:fix && yarn lint:fix && yarn test:coverage
 ```
 
-(eslint --fix → oxfmt → install → type-check → tests → dependency sync check.) If any step fails, fix the issue and re-run the full chain.
+(install → type-check → dependency sync check → format → eslint --fix → tests with coverage.) If any step fails, fix the issue and re-run the full chain.
 
 ## Rules
 
