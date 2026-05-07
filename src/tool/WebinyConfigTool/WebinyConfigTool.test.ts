@@ -52,6 +52,7 @@ describe("WebinyConfigTool", () => {
 
     it("save() calls file.save()", () => {
         const mockFile = {
+            addImport: vi.fn(),
             addChild: vi.fn(),
             insertBefore: vi.fn(),
             insertAfter: vi.fn(),

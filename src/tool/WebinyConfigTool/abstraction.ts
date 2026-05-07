@@ -12,7 +12,15 @@ interface IWebinyConfigBuilder {
     insertAfter(ref: string, tag: string, options?: AddChildOptions): void;
 }
 
+type IImportEntry = string | Record<string, string>;
+
+interface AddImportOptions {
+    package: string;
+    imports: IImportEntry[];
+}
+
 interface IWebinyConfigFile extends IWebinyConfigBuilder {
+    addImport(options: AddImportOptions): void;
     save(): void;
 }
 
@@ -28,4 +36,6 @@ export namespace WebinyConfigTool {
     export type File = IWebinyConfigFile;
     export type Builder = IWebinyConfigBuilder;
     export type ChildOptions = AddChildOptions;
+    export type ImportEntry = IImportEntry;
+    export type ImportOptions = AddImportOptions;
 }

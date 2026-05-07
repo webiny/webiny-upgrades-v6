@@ -84,7 +84,7 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
 | `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
-| `WebinyConfigTool` | `../../tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if not found), `save(file): void`. `addChild(tag, opts)` merges structurally into existing parents (warns and skips duplicates). `insertBefore(ref, tag, opts)` / `insertAfter(ref, tag, opts)` position a new element relative to a named sibling (warn + append at end if ref not found). See **WebinyConfigFile API** below. |
+| `WebinyConfigTool` | `../../tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if not found), `save(file): void`. `addImport(opts)` adds named imports (merges into existing declaration for the same package, warns and skips duplicates). `addChild(tag, opts)` merges structurally into existing parents (warns and skips duplicates). `insertBefore(ref, tag, opts)` / `insertAfter(ref, tag, opts)` position a new element relative to a named sibling (warn + append at end if ref not found). See **WebinyConfigFile API** below. |
 | `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
@@ -96,10 +96,17 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 The object returned by `WebinyConfigTool.read()`:
 
 ```ts
+file.addImport(options: ImportOptions): void
 file.addChild(tag: string, options?: ChildOptions): void
 file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
 file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
 file.save(): void
+
+type ImportEntry = string | Record<string, string>;
+interface ImportOptions {
+    package: string;
+    imports: ImportEntry[];        // plain string or { originalName: localAlias }
+}
 
 interface ChildOptions {
     comment?: string;                       // renders as {/* comment */} above the element

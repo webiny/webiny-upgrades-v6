@@ -96,10 +96,17 @@ Use relative imports — `~/` aliases are not available in all contexts.
 The object returned by `WebinyConfigTool.read()`:
 
 ```ts
+file.addImport(options: ImportOptions): void
 file.addChild(tag: string, options?: ChildOptions): void
 file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
 file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
 file.save(): void
+
+type ImportEntry = string | Record<string, string>;
+interface ImportOptions {
+    package: string;
+    imports: ImportEntry[];        // plain string or { originalName: localAlias }
+}
 
 interface ChildOptions {
     comment?: string;                       // renders as {/* comment */} above the element

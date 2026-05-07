@@ -11,7 +11,16 @@ A DI-registered tool for reading and programmatically modifying a project's `web
 | `WebinyConfigTool.File` | type | Extends `Builder`; additionally exposes `save()` (writes back to disk). |
 | `WebinyConfigTool.Builder` | type | `{ addChild(tag, opts?); insertBefore(ref, tag, opts?); insertAfter(ref, tag, opts?) }` |
 | `WebinyConfigTool.ChildOptions` | type | `{ comment?, props?, children? }` passed when adding/inserting elements. |
+| `WebinyConfigTool.ImportEntry` | type | `string \| Record<string, string>` — plain name or `{ originalName: localAlias }`. |
+| `WebinyConfigTool.ImportOptions` | type | `{ package: string; imports: ImportEntry[] }` passed to `addImport`. |
 | `WebinyConfigToolFeature` | feature | Registers the concrete implementation into the DI container. |
+
+### `File` methods
+
+| Method | Description |
+|---|---|
+| `addImport(opts)` | Adds named imports from a package. Creates a new import declaration if none exists for the package; merges into the existing one otherwise. Skips (with a warning) any name already imported. |
+| `save()` | Writes all mutations back to disk. |
 
 ### `Builder` methods
 
@@ -30,6 +39,10 @@ container.use(WebinyConfigToolFeature);
 
 const tool = container.resolve(WebinyConfigTool);
 const file = tool.read();
+
+// Add named imports (creates declaration or merges into existing one)
+file.addImport({ package: "@webiny/extensions", imports: ["Infra", "Api"] });
+file.addImport({ package: "@webiny/extensions", imports: [{ Infra: "Infrastructure" }] });
 
 file.addChild("MyExtension", {
     comment: "Added by upgrade 6.1.0",

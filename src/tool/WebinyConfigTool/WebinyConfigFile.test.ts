@@ -297,6 +297,104 @@ describe("WebinyConfigFile", () => {
     });
 });
 
+// ── addImport ─────────────────────────────────────────────────────────────────────────
+
+const WITH_IMPORT_FIXTURE = `import { Infra } from "@webiny/extensions";
+
+export const Extensions = () => {
+    return (
+        <>
+            <ProjectAws />
+        </>
+    );
+};
+`;
+
+describe("WebinyConfigFile — addImport", () => {
+    let tmpDir: string;
+    let filePath: string;
+    let logger: ReturnType<typeof createMockLogger>;
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "webiny-config-test-"));
+        filePath = path.join(tmpDir, "webiny.config.tsx");
+        logger = createMockLogger();
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    const createFile = (content: string): WebinyConfigFile => {
+        fs.writeFileSync(filePath, content, "utf-8");
+        return new WebinyConfigFile(filePath, logger);
+    };
+
+    const read = (): string => fs.readFileSync(filePath, "utf-8");
+
+    it("adds a new import declaration when no import from the package exists", () => {
+        const file = createFile(FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.save();
+        expect(read()).toContain('import { Infra } from "@webiny/extensions"');
+    });
+
+    it("adds a named import to an existing import from the same package", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: ["Api"] });
+        file.save();
+        const content = read();
+        expect(content).toContain("Infra");
+        expect(content).toContain("Api");
+        const count = (content.match(/from "@webiny\/extensions"/g) ?? []).length;
+        expect(count).toBe(1);
+    });
+
+    it("supports aliased imports using { name: alias } syntax", () => {
+        const file = createFile(FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: [{ Infra: "Infrastructure" }] });
+        file.save();
+        expect(read()).toContain("Infra as Infrastructure");
+    });
+
+    it("skips a duplicate and does not add the import a second time", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.save();
+        const count = (read().match(/\bInfra\b/g) ?? []).length;
+        expect(count).toBe(1);
+    });
+
+    it("warns when skipping a duplicate named import", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Infra"));
+    });
+
+    it("handles multiple imports in a single call", () => {
+        const file = createFile(FIXTURE);
+        file.addImport({ package: "@webiny/extensions", imports: ["Infra", "Api"] });
+        file.save();
+        const content = read();
+        expect(content).toContain("Infra");
+        expect(content).toContain("Api");
+        const count = (content.match(/from "@webiny\/extensions"/g) ?? []).length;
+        expect(count).toBe(1);
+    });
+
+    it("handles a mix of plain and aliased imports in a single call", () => {
+        const file = createFile(FIXTURE);
+        file.addImport({
+            package: "@webiny/extensions",
+            imports: ["Api", { Infra: "Infrastructure" }]
+        });
+        file.save();
+        const content = read();
+        expect(content).toContain("Api");
+        expect(content).toContain("Infra as Infrastructure");
+    });
+});
+
 // ── fixture with existing block element (for makeBuilder / structural-merge tests) ────
 
 const FIXTURE_WITH_BLOCK = `export const Extensions = () => {
