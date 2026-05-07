@@ -4,13 +4,13 @@ Orchestrates the full upgrade lifecycle for a Webiny project. Given a target ver
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `UpgradeHandler` | abstraction token | DI token and namespace for `Interface` / `Params`. |
-| `UpgradeHandler.Interface` | type | Contract: `handle(params: Params): Promise<void>`. |
-| `UpgradeHandler.Params` | type | `{ version: Version }` — the target upgrade version. |
-| `UpgradeHandlerFeature` | DI feature | Registers the concrete `UpgradeHandlerImpl` into a DI container. |
-| `DirtyGitRepositoryError` | error class | Thrown when the git working tree has uncommitted changes at the start of `handle`. |
+| Export                     | Kind              | Description                                                                        |
+| -------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `UpgradeHandler`           | abstraction token | DI token and namespace for `Interface` / `Params`.                                 |
+| `UpgradeHandler.Interface` | type              | Contract: `handle(params: Params): Promise<void>`.                                 |
+| `UpgradeHandler.Params`    | type              | `{ version: Version }` — the target upgrade version.                               |
+| `UpgradeHandlerFeature`    | DI feature        | Registers the concrete `UpgradeHandlerImpl` into a DI container.                   |
+| `DirtyGitRepositoryError`  | error class       | Thrown when the git working tree has uncommitted changes at the start of `handle`. |
 
 ## Usage
 

@@ -4,18 +4,18 @@ Handles terminal upgrade responses by logging a success or failure message and i
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Responder` | abstraction token | DI token and namespace for the `IResponder` interface; resolved by consumers to call `success` or `error`. |
-| `Responder.Interface` | type | Interface satisfied by any Responder implementation (`success(duration, message?)` and `error(message, duration, error?)`). |
-| `ResponderFeature` | DI feature | Registers `ProcessResponder` as the concrete implementation of `Responder` in a DI container. |
+| Export                | Kind              | Description                                                                                                                 |
+| --------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `Responder`           | abstraction token | DI token and namespace for the `IResponder` interface; resolved by consumers to call `success` or `error`.                  |
+| `Responder.Interface` | type              | Interface satisfied by any Responder implementation (`success(duration, message?)` and `error(message, duration, error?)`). |
+| `ResponderFeature`    | DI feature        | Registers `ProcessResponder` as the concrete implementation of `Responder` in a DI container.                               |
 
 ### `ProcessResponder` methods
 
-| Method | Signature | Behaviour |
-|---|---|---|
-| `success` | `(duration: number, message?: string): never` | Logs a completion message via `logger.done`, then calls `process.exit(0)`. |
-| `error` | `(message: string, duration: number, error?: Error): never` | Logs the message via `logger.error`, optionally logs the stack trace via `logger.debug`, logs a fatal duration line, then calls `process.exit(1)`. |
+| Method    | Signature                                                   | Behaviour                                                                                                                                          |
+| --------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `success` | `(duration: number, message?: string): never`               | Logs a completion message via `logger.done`, then calls `process.exit(0)`.                                                                         |
+| `error`   | `(message: string, duration: number, error?: Error): never` | Logs the message via `logger.error`, optionally logs the stack trace via `logger.debug`, logs a fatal duration line, then calls `process.exit(1)`. |
 
 ## Usage
 
@@ -24,7 +24,7 @@ import { ResponderFeature, Responder } from "./base/Responder/index.js";
 
 // Register when bootstrapping
 const app = createApplication({
-    features: [ResponderFeature()]
+  features: [ResponderFeature()]
 });
 
 const responder = container.resolve(Responder);

@@ -8,7 +8,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "build": "tsc --noEmit",
-    "format:fix": "oxfmt 'src/**/*.{ts,js}' '.adiorc.js' 'eslint.config.js' 'index.js' 'tsconfig.json'",
+    "format:fix": "oxfmt",
     "format:check": "oxfmt --check",
     "eslint": "eslint \"**/*.{js,ts}\" --max-warnings=0",
     "eslint:fix": "yarn eslint --fix",

@@ -4,12 +4,12 @@ Wraps async operations with timing instrumentation. Each call to `execute` recor
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Timer` | abstraction token | DI token for the timer service. |
-| `Timer.Interface` | type | `{ execute<T>(name: string, cb: () => Promise<T>): Promise<Timer.Result<T>> }` |
-| `Timer.Result<T>` | type | `{ result: T; startAt: Date; endAt: Date; duration: number }` — `duration` is in milliseconds. |
-| `TimerFeature` | feature | Registers the `TimerImpl` against the `Timer` token; depends on `Logger`. |
+| Export            | Kind              | Description                                                                                    |
+| ----------------- | ----------------- | ---------------------------------------------------------------------------------------------- |
+| `Timer`           | abstraction token | DI token for the timer service.                                                                |
+| `Timer.Interface` | type              | `{ execute<T>(name: string, cb: () => Promise<T>): Promise<Timer.Result<T>> }`                 |
+| `Timer.Result<T>` | type              | `{ result: T; startAt: Date; endAt: Date; duration: number }` — `duration` is in milliseconds. |
+| `TimerFeature`    | feature           | Registers the `TimerImpl` against the `Timer` token; depends on `Logger`.                      |
 
 ## Usage
 
@@ -21,7 +21,7 @@ container.use(TimerFeature);
 const timer = container.resolve(Timer);
 
 const { result, duration } = await timer.execute("install packages", async () => {
-    return await packageManager.install();
+  return await packageManager.install();
 });
 
 logger.info(`Install completed in ${duration / 1000}s`);

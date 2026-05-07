@@ -4,11 +4,11 @@ The top-level entry point that ties together all upgrade services and drives a s
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Application` | abstraction token | DI token for the application; resolved to call `execute()`. |
-| `Application.Interface` | type | `{ execute(): Promise<void> }` |
-| `ApplicationFeature` | feature | Registers the `ApplicationImpl` against the `Application` token. |
+| Export                  | Kind              | Description                                                      |
+| ----------------------- | ----------------- | ---------------------------------------------------------------- |
+| `Application`           | abstraction token | DI token for the application; resolved to call `execute()`.      |
+| `Application.Interface` | type              | `{ execute(): Promise<void> }`                                   |
+| `ApplicationFeature`    | feature           | Registers the `ApplicationImpl` against the `Application` token. |
 
 ## Usage
 

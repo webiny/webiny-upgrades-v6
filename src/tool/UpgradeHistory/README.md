@@ -4,12 +4,12 @@ Tracks which Webiny versions have been applied to a project by persisting a time
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `UpgradeHistory` | abstraction token | DI token and namespace for the `IUpgradeHistory` service. |
-| `UpgradeHistory.Interface` | type | Contract that the implementation must satisfy (`add`, `remove`, `get`, `list`). |
-| `UpgradeHistory.Entry` | type | Shape of a single history record: `{ version: string; timestamp: string }`. |
-| `UpgradeHistoryFeature` | feature | Registers the `UpgradeHistory` implementation into a DI container. |
+| Export                     | Kind              | Description                                                                     |
+| -------------------------- | ----------------- | ------------------------------------------------------------------------------- |
+| `UpgradeHistory`           | abstraction token | DI token and namespace for the `IUpgradeHistory` service.                       |
+| `UpgradeHistory.Interface` | type              | Contract that the implementation must satisfy (`add`, `remove`, `get`, `list`). |
+| `UpgradeHistory.Entry`     | type              | Shape of a single history record: `{ version: string; timestamp: string }`.     |
+| `UpgradeHistoryFeature`    | feature           | Registers the `UpgradeHistory` implementation into a DI container.              |
 
 ## Usage
 

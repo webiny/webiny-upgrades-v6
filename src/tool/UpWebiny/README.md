@@ -4,12 +4,12 @@ Pins all `@webiny/*` packages in a project's `package.json` to a given target ve
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `UpWebiny` | abstraction token | DI token for the tool; resolved to call `execute`. |
-| `UpWebiny.Interface` | type | `{ execute(params: Params): void }` |
-| `UpWebiny.Params` | type | `{ version: Version }` — the target version to pin all packages to. |
-| `UpWebinyFeature` | feature | Registers the concrete `UpWebinyImpl` against the `UpWebiny` token. |
+| Export               | Kind              | Description                                                         |
+| -------------------- | ----------------- | ------------------------------------------------------------------- |
+| `UpWebiny`           | abstraction token | DI token for the tool; resolved to call `execute`.                  |
+| `UpWebiny.Interface` | type              | `{ execute(params: Params): void }`                                 |
+| `UpWebiny.Params`    | type              | `{ version: Version }` — the target version to pin all packages to. |
+| `UpWebinyFeature`    | feature           | Registers the concrete `UpWebinyImpl` against the `UpWebiny` token. |
 
 ## Usage
 

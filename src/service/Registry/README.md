@@ -4,13 +4,13 @@ Queries an npm-compatible package registry (defaulting to `https://registry.npmj
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `RegistryService` | abstraction / DI token | Interface and DI token for the registry service; resolved from the container to call `getLatestVersion` / `getVersion`. |
-| `RegistryService.Interface` | type | TypeScript interface declaring the two registry methods. |
-| `RegistryFeature` | feature | DI feature that registers the concrete `RegistryService` implementation into the container. |
-| `LatestVersionUnavailableError` | error class | Thrown when the latest version of a package cannot be fetched from the registry. |
-| `VersionNotFoundError` | error class | Thrown when a specific version of a package does not exist in the registry. |
+| Export                          | Kind                   | Description                                                                                                             |
+| ------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `RegistryService`               | abstraction / DI token | Interface and DI token for the registry service; resolved from the container to call `getLatestVersion` / `getVersion`. |
+| `RegistryService.Interface`     | type                   | TypeScript interface declaring the two registry methods.                                                                |
+| `RegistryFeature`               | feature                | DI feature that registers the concrete `RegistryService` implementation into the container.                             |
+| `LatestVersionUnavailableError` | error class            | Thrown when the latest version of a package cannot be fetched from the registry.                                        |
+| `VersionNotFoundError`          | error class            | Thrown when a specific version of a package does not exist in the registry.                                             |
 
 ## Usage
 
