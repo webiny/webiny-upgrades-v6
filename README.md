@@ -133,3 +133,41 @@ export default createFeature({
 ```
 
 The runner will automatically discover and execute the script when `6.2.0` is passed as the target version.
+
+## Modules
+
+### Base (`src/base/`)
+
+| Module | Description |
+|---|---|
+| [Application](src/base/Application/README.md) | Top-level entry point; drives the full upgrade run and exits via `Responder`. |
+| [Container](src/base/Container/README.md) | Makes the DI container itself injectable via a `Container` token. |
+| [Context](src/base/Context/README.md) | Holds runtime state: `cwd`, versions, `setCurrentVersion`, `resolve`. |
+| [Input](src/base/Input/README.md) | Parsed CLI flags (`cwd`, `version`, `dryRun`, `forceUpgrade`, etc.). |
+| [Logger](src/base/Logger/README.md) | pino-backed logging with `pretty` and `json` output modes. |
+| [Responder](src/base/Responder/README.md) | Logs final success/error and exits the process with the correct code. |
+| [Timer](src/base/Timer/README.md) | Wraps async operations with start/end timing instrumentation. |
+| [Upgrade](src/base/Upgrade/README.md) | Interface all versioned upgrade steps must implement. |
+| [Version](src/base/Version/README.md) | Immutable semver wrapper with comparison helpers and pre-release stripping. |
+
+### Services (`src/service/`)
+
+| Module | Description |
+|---|---|
+| [Git](src/service/Git/README.md) | Checks working-tree cleanliness and rolls back changes via `git restore`. |
+| [PackageJson](src/service/PackageJson/README.md) | Low-level load/mutate/save for any `package.json` file. |
+| [PackageManager](src/service/PackageManager/README.md) | Auto-detects yarn/pnpm/npm and exposes `install`, `version`, `update`. |
+| [References](src/service/References/README.md) | Reads `references.json` from `@webiny/cli` for canonical dependency versions. |
+| [Registry](src/service/Registry/README.md) | Queries an npm registry for latest or specific package versions. |
+| [UpgradeHandler](src/service/UpgradeHandler/README.md) | Orchestrates a single version's upgrade lifecycle with git guard and rollback. |
+| [UpgradeRunner](src/service/UpgradeRunner/README.md) | Discovers and runs versioned upgrade directories in semver order. |
+
+### Tools (`src/tool/`)
+
+| Module | Description |
+|---|---|
+| [DependencyGuard](src/tool/DependencyGuard/README.md) | Detects third-party dependency version drift against `references.json`. |
+| [PackageJsonTool](src/tool/PackageJsonTool/README.md) | Context-aware `PackageJson` wrapper that defaults to the project's `cwd`. |
+| [UpWebiny](src/tool/UpWebiny/README.md) | Pins all `@webiny/*` packages to a target version and normalises placement. |
+| [UpgradeHistory](src/tool/UpgradeHistory/README.md) | Persists and queries the upgrade history inside `package.json`. |
+| [WebinyConfigTool](src/tool/WebinyConfigTool/README.md) | Reads and mutates `webiny.config.tsx` via ts-morph AST. |

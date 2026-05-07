@@ -1,5 +1,7 @@
 # webiny-upgrades-v6
 
+> **Documentation rule:** If you modify any code inside `src/base/`, `src/service/`, or `src/tool/`, you **must** update the `README.md` in that module's folder. If you add a new public export, update the API table. If you change behaviour, update the description and usage example. Do not leave READMEs stale.
+
 CLI tool that automates upgrading a Webiny project to a target version. It updates all `@webiny/*` package versions and runs the version-specific upgrade script.
 
 ## Running
