@@ -1,14 +1,13 @@
 import { Project, ts } from "ts-morph";
-import type { SourceFile } from "ts-morph";
 import type { Logger } from "../../base/Logger/index.js";
-import type { WebinyConfigTool } from "./abstraction.js";
 import { WebinyConfigImports } from "./WebinyConfigImports.js";
 import { WebinyConfigJsx } from "./WebinyConfigJsx.js";
+import { WebinyConfigTool } from "./abstraction.js";
 
 export class WebinyConfigFile implements WebinyConfigTool.File {
-    private readonly sourceFile: SourceFile;
-    public readonly imports: WebinyConfigTool.Imports;
-    public readonly jsx: WebinyConfigTool.Jsx;
+    private readonly sourceFile;
+    public readonly imports;
+    public readonly jsx;
 
     public constructor(filePath: string, logger: Logger.Interface) {
         const project = new Project({
