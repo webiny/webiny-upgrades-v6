@@ -12,7 +12,8 @@ export default defineConfig({
                 "src/**/feature.ts",
                 "src/**/abstraction.ts",
                 "src/__tests__/**",
-                "src/**/fixtures/**"
+                "src/**/fixtures/**",
+                "**/*.md"
             ],
             thresholds: {
                 statements: 100,

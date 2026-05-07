@@ -229,6 +229,11 @@ Vitest is the test runner. Scripts:
 
 Enforced in `vitest.config.ts`: 100% statements, functions, and lines; 98% branches. Failing to meet any floor fails `yarn test:coverage`.
 
+When coverage gaps appear, apply one of two approaches — never mix them:
+
+- **Unreachable defensive guards** (null checks that protect against states proven impossible by the call site, e.g. re-querying an already-verified fragment): suppress with `/* v8 ignore next */` (single line) or `/* v8 ignore start */` / `/* v8 ignore stop */` (block). Leave a short comment explaining why the branch is unreachable only when it isn't obvious from context.
+- **Reachable but untested code** (empty container paths, exotic node types, etc.): write a focused test. Do not suppress reachable code with ignore comments.
+
 ### Global test setup
 
 `vitest.setup.ts` bumps `process.setMaxListeners(50)` to silence the pino/exit-listener warning that fires when many test files share a process.
