@@ -53,7 +53,7 @@ describe("WebinyConfigTool", () => {
 
     it("save() calls file.save()", () => {
         const mockFile = {
-            imports: { add: vi.fn() },
+            imports: { add: vi.fn(), remove: vi.fn() },
             jsx: { addChild: vi.fn(), insertBefore: vi.fn(), insertAfter: vi.fn() },
             save: vi.fn()
         };

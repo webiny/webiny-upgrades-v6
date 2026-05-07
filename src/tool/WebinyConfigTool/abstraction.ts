@@ -19,8 +19,14 @@ interface AddImportOptions {
     imports: IImportEntry[];
 }
 
+interface IRemoveImportOptions {
+    package: string;
+    imports?: string[];
+}
+
 interface IWebinyConfigImports {
     add(options: AddImportOptions): void;
+    remove(options: IRemoveImportOptions): void;
 }
 
 interface IWebinyConfigFile {
@@ -44,4 +50,5 @@ export namespace WebinyConfigTool {
     export type ChildOptions = AddChildOptions;
     export type ImportEntry = IImportEntry;
     export type ImportOptions = AddImportOptions;
+    export type RemoveImportOptions = IRemoveImportOptions;
 }

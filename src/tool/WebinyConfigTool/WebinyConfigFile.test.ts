@@ -398,6 +398,97 @@ describe("WebinyConfigFile — imports.add", () => {
     });
 });
 
+// ── imports.remove ────────────────────────────────────────────────────────────────────
+
+const WITH_TWO_IMPORTS_FIXTURE = `import { Infra, Api } from "@webiny/extensions";
+
+export const Extensions = () => {
+    return (
+        <>
+            <ProjectAws />
+        </>
+    );
+};
+`;
+
+describe("WebinyConfigFile — imports.remove", () => {
+    let tmpDir: string;
+    let filePath: string;
+    let logger: ReturnType<typeof createMockLogger>;
+
+    beforeEach(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "webiny-config-test-"));
+        filePath = path.join(tmpDir, "webiny.config.tsx");
+        logger = createMockLogger();
+    });
+
+    afterEach(() => {
+        fs.rmSync(tmpDir, { recursive: true });
+    });
+
+    const createFile = (content: string): WebinyConfigFile => {
+        fs.writeFileSync(filePath, content, "utf-8");
+        return new WebinyConfigFile(filePath, logger);
+    };
+
+    const read = (): string => fs.readFileSync(filePath, "utf-8");
+
+    it("removes the entire import declaration when no imports array is given", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions" });
+        file.save();
+        expect(read()).not.toContain("@webiny/extensions");
+    });
+
+    it("is a no-op when the package is not imported", () => {
+        const file = createFile(FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions" });
+        file.save();
+        expect(read()).toBe(FIXTURE);
+    });
+
+    it("removes only the specified named import, keeping the rest", () => {
+        const file = createFile(WITH_TWO_IMPORTS_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions", imports: ["Api"] });
+        file.save();
+        const content = read();
+        expect(content).not.toContain("Api");
+        expect(content).toContain("Infra");
+        expect(content).toContain("@webiny/extensions");
+    });
+
+    it("removes multiple named imports in a single call", () => {
+        const file = createFile(WITH_TWO_IMPORTS_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions", imports: ["Infra", "Api"] });
+        file.save();
+        expect(read()).not.toContain("@webiny/extensions");
+    });
+
+    it("silently ignores a named import that is not present", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions", imports: ["NonExistent"] });
+        file.save();
+        expect(read()).toContain("Infra");
+        expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it("removes the whole declaration when all named imports are removed", () => {
+        const file = createFile(WITH_IMPORT_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.save();
+        expect(read()).not.toContain("@webiny/extensions");
+    });
+
+    it("removes only present names and ignores absent ones in the same call", () => {
+        const file = createFile(WITH_TWO_IMPORTS_FIXTURE);
+        file.imports.remove({ package: "@webiny/extensions", imports: ["Api", "NonExistent"] });
+        file.save();
+        const content = read();
+        expect(content).not.toContain("Api");
+        expect(content).toContain("Infra");
+    });
+});
+
 // ── fixture with existing block element (for makeBuilder / structural-merge tests) ────
 
 const FIXTURE_WITH_BLOCK = `export const Extensions = () => {

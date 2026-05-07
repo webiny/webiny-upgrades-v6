@@ -8,6 +8,32 @@ export class WebinyConfigImports implements WebinyConfigTool.Imports {
         private readonly logger: Logger.Interface
     ) {}
 
+    public remove(options: WebinyConfigTool.RemoveImportOptions): void {
+        const declaration = this.sourceFile
+            .getImportDeclarations()
+            .find(d => d.getModuleSpecifierValue() === options.package);
+
+        if (!declaration) {
+            return;
+        }
+
+        if (!options.imports) {
+            declaration.remove();
+            return;
+        }
+
+        const toRemove = new Set(options.imports);
+        for (const specifier of declaration.getNamedImports()) {
+            if (toRemove.has(specifier.getName())) {
+                specifier.remove();
+            }
+        }
+
+        if (declaration.getNamedImports().length === 0) {
+            declaration.remove();
+        }
+    }
+
     public add(options: WebinyConfigTool.ImportOptions): void {
         const normalize = (
             entry: WebinyConfigTool.ImportEntry

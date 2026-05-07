@@ -98,6 +98,7 @@ The object returned by `WebinyConfigTool.read()`:
 ```ts
 // imports sub-object
 file.imports.add(options: ImportOptions): void
+file.imports.remove(options: RemoveImportOptions): void
 
 // jsx sub-object
 file.jsx.addChild(tag: string, options?: ChildOptions): void
@@ -111,6 +112,11 @@ type ImportEntry = string | Record<string, string>;
 interface ImportOptions {
     package: string;
     imports: ImportEntry[];        // plain string or { originalName: localAlias }
+}
+
+interface RemoveImportOptions {
+    package: string;
+    imports?: string[];            // omit to remove the entire declaration
 }
 
 interface ChildOptions {
@@ -256,10 +262,10 @@ When coverage gaps appear, apply one of two approaches — never mix them:
 After every change, run:
 
 ```bash
-yarn lint:fix && yarn && yarn build && yarn test && yarn adio:check
+yarn && yarn build && yarn adio:check && yarn format:fix && yarn lint:fix && yarn test:coverage
 ```
 
-(eslint --fix → oxfmt → install → type-check → tests → dependency sync check.) If any step fails, fix the issue and re-run the full chain.
+(install → type-check → dependency sync check → format → eslint --fix → tests with coverage.) If any step fails, fix the issue and re-run the full chain.
 
 ## Rules
 
