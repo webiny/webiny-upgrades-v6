@@ -15,6 +15,33 @@ const FIXTURE = `export const Extensions = () => {
 };
 `;
 
+const EMPTY_FIXTURE = `export const Extensions = () => {
+    return (
+        <>
+        </>
+    );
+};
+`;
+
+const JSX_EXPRESSION_FIXTURE = `export const Extensions = () => {
+    return (
+        <>
+            {someVariable}
+            <ProjectAws />
+        </>
+    );
+};
+`;
+
+const EMPTY_BLOCK_FIXTURE = `export const Extensions = () => {
+    return (
+        <>
+            <Level1></Level1>
+        </>
+    );
+};
+`;
+
 describe("WebinyConfigFile", () => {
     let tmpDir: string;
     let filePath: string;
@@ -236,6 +263,29 @@ describe("WebinyConfigFile", () => {
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("No JSX fragment"));
     });
 
+    // ── empty fragment ────────────────────────────────────────────────────────
+
+    it("inserts an element into an empty fragment", () => {
+        const file = createFile(EMPTY_FIXTURE);
+        file.addChild("NewElement");
+        file.save();
+        expect(read()).toContain("<NewElement />");
+    });
+
+    it("inserts a child into an empty block element via structural merge", () => {
+        const file = createFile(EMPTY_BLOCK_FIXTURE);
+        file.addChild("Level1", { children: b => b.addChild("NewChild") });
+        file.save();
+        expect(read()).toContain("<NewChild />");
+    });
+
+    it("skips non-element JSX nodes when searching for duplicates", () => {
+        const file = createFile(JSX_EXPRESSION_FIXTURE);
+        file.addChild("NewElement");
+        file.save();
+        expect(read()).toContain("<NewElement />");
+    });
+
     // ── save ───────────────────────────────────────────────────────────────────
 
     it("save() writes mutations to disk", () => {
@@ -366,6 +416,25 @@ describe("WebinyConfigFile — insertBefore", () => {
         expect(content).toContain("<NewChild />");
         expect(content.indexOf("<ChildA />")).toBeLessThan(content.indexOf("<NewChild />"));
         expect(content.indexOf("<NewChild />")).toBeLessThan(content.indexOf("<ChildB />"));
+    });
+
+    it("warns and inserts into empty fragment when ref not found", () => {
+        const file = createFile(EMPTY_FIXTURE);
+        file.insertBefore("NonExistent", "NewElement");
+        file.save();
+        expect(read()).toContain("<NewElement />");
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<NonExistent>"));
+    });
+
+    it("inserts before the first child of a nested JsxElement container", () => {
+        const file = createFile(FIXTURE_WITH_BLOCK);
+        file.addChild("Infra.Env.IsProd", {
+            children: b => b.insertBefore("ChildA", "NewFirst")
+        });
+        file.save();
+        const content = read();
+        expect(content).toContain("<NewFirst />");
+        expect(content.indexOf("<NewFirst />")).toBeLessThan(content.indexOf("<ChildA />"));
     });
 });
 

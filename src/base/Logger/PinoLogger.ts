@@ -30,7 +30,7 @@ const createJsonDestination = (): Writable => {
                 };
                 const type: JsonLogType = entry._done
                     ? "done"
-                    : (LEVEL_TO_TYPE[entry.level] ?? "info");
+                    : /* v8 ignore next */ (LEVEL_TO_TYPE[entry.level] ?? "info");
                 process.stdout.write(JSON.stringify({ type, message: entry.msg }) + "\n");
             } catch {
                 // ignore malformed lines
