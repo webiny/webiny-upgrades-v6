@@ -28,21 +28,21 @@
     "typescript": "6.0.3",
     "write-json-file": "^7.0.0",
     "yargs": "^18.0.0",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.35",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
-    "@vitest/coverage-v8": "^4.1.4",
-    "adio": "^2.1.0",
-    "eslint": "^10.2.1",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "@vitest/coverage-v8": "^4.1.5",
+    "adio": "^3.0.0",
+    "eslint": "^10.3.0",
     "eslint-plugin-import-x": "^4.16.2",
-    "oxfmt": "^0.45.0",
+    "oxfmt": "^0.48.0",
     "prettier": "3.8.3",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.5"
   },
   "engines": {
     "node": ">=24.0.0"
