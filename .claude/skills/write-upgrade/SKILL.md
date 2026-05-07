@@ -84,7 +84,7 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 | `Context` | `../../base/Context/index.js` | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (logical — advances after each upgrade step), `resolve()` |
 | `Logger` | `../../base/Logger/index.js` | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `_done` metadata; JSON transport maps to `type: "done"`) |
 | `PackageJsonTool` | `../../tool/PackageJsonTool/index.js` | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below. |
-| `WebinyConfigTool` | `../../tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if not found), `save(file): void`. `addImport(opts)` adds named imports (merges into existing declaration for the same package, warns and skips duplicates). `addChild(tag, opts)` merges structurally into existing parents (warns and skips duplicates). `insertBefore(ref, tag, opts)` / `insertAfter(ref, tag, opts)` position a new element relative to a named sibling (warn + append at end if ref not found). See **WebinyConfigFile API** below. |
+| `WebinyConfigTool` | `../../tool/WebinyConfigTool/index.js` | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if not found), `save(file): void`. The returned file exposes `file.imports` and `file.jsx` sub-objects. See **WebinyConfigFile API** below. |
 | `PackageJsonService` | `../../service/PackageJson/index.js` | Low-level load/save for any `package.json` path. `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile`, `save(file): void`. Same `PackageJsonFile` API as above. |
 | `DependencyGuard` | `../../tool/DependencyGuard/index.js` | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches). |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
@@ -96,10 +96,15 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 The object returned by `WebinyConfigTool.read()`:
 
 ```ts
-file.addImport(options: ImportOptions): void
-file.addChild(tag: string, options?: ChildOptions): void
-file.insertBefore(ref: string, tag: string, options?: ChildOptions): void
-file.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+// imports sub-object
+file.imports.add(options: ImportOptions): void
+
+// jsx sub-object
+file.jsx.addChild(tag: string, options?: ChildOptions): void
+file.jsx.insertBefore(ref: string, tag: string, options?: ChildOptions): void
+file.jsx.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+
+// file
 file.save(): void
 
 type ImportEntry = string | Record<string, string>;
@@ -111,20 +116,20 @@ interface ImportOptions {
 interface ChildOptions {
     comment?: string;                       // renders as {/* comment */} above the element
     props?: Record<string, string>;         // expression syntax: { passphrase: 'process.env.X || ""' }
-    children?: (builder: Builder) => void;  // nested children callback
+    children?: (jsx: Jsx) => void;          // nested children callback
 }
 ```
 
-`addChild` behaviour:
+`jsx.addChild` behaviour:
 - **Not found** → inserts after the last JSX fragment child (self-closing if no `children`, block element if `children` provided)
 - **Found, no `children` callback** → logs a warning and skips (never creates duplicates)
 - **Found, `children` callback provided** → structural merge: recurses into the existing element
 
-`insertBefore(ref, tag, options)` / `insertAfter(ref, tag, options)` behaviour:
+`jsx.insertBefore(ref, tag, options)` / `jsx.insertAfter(ref, tag, options)` behaviour:
 - **`ref` not found** → warns and falls back to append at end
 - **`tag` already exists** → warns and no-ops — **no** structural merge, even if `options.children` provided
 - **Normal path** → inserts `tag` immediately before/after the first occurrence of `ref`; indent is inferred from `ref`'s column offset
-- Available at every nesting level via the `Builder` passed to a `children` callback
+- Available at every nesting level via the `Jsx` object passed to a `children` callback
 
 ### PackageJsonFile API
 

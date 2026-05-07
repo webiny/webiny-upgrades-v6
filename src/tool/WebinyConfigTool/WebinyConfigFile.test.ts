@@ -42,7 +42,7 @@ const EMPTY_BLOCK_FIXTURE = `export const Extensions = () => {
 };
 `;
 
-describe("WebinyConfigFile", () => {
+describe("WebinyConfigFile — jsx.addChild", () => {
     let tmpDir: string;
     let filePath: string;
     let logger: ReturnType<typeof createMockLogger>;
@@ -68,14 +68,14 @@ describe("WebinyConfigFile", () => {
 
     it("inserts a self-closing element after the last fragment child", () => {
         const file = createFile();
-        file.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
         file.save();
         expect(read()).toContain("<Infra.Foo />");
     });
 
     it("inserts after the last existing child (not before it)", () => {
         const file = createFile();
-        file.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
         file.save();
         const content = read();
         expect(content.indexOf("<ProjectAws />")).toBeLessThan(content.indexOf("<Infra.Foo />"));
@@ -83,14 +83,14 @@ describe("WebinyConfigFile", () => {
 
     it("renders props as JSX expression attributes", () => {
         const file = createFile();
-        file.addChild("Infra.Foo", { props: { bar: '"hello"', n: "42" } });
+        file.jsx.addChild("Infra.Foo", { props: { bar: '"hello"', n: "42" } });
         file.save();
         expect(read()).toContain('<Infra.Foo bar={"hello"} n={42} />');
     });
 
     it("renders a comment on the line above the element", () => {
         const file = createFile();
-        file.addChild("Infra.Foo", { comment: "My comment" });
+        file.jsx.addChild("Infra.Foo", { comment: "My comment" });
         file.save();
         const content = read();
         expect(content).toContain("{/* My comment */}");
@@ -101,7 +101,7 @@ describe("WebinyConfigFile", () => {
 
     it("uses the same indentation as existing fragment children", () => {
         const file = createFile();
-        file.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
         file.save();
         expect(read()).toMatch(/^            <Infra\.Foo \/>/m);
     });
@@ -110,7 +110,7 @@ describe("WebinyConfigFile", () => {
 
     it("inserts a block element with children", () => {
         const file = createFile();
-        file.addChild("Infra.Bar", {
+        file.jsx.addChild("Infra.Bar", {
             children: b => {
                 b.addChild("Infra.Baz");
             }
@@ -124,7 +124,7 @@ describe("WebinyConfigFile", () => {
 
     it("indents nested children one level deeper than the parent", () => {
         const file = createFile();
-        file.addChild("Infra.Bar", {
+        file.jsx.addChild("Infra.Bar", {
             children: b => {
                 b.addChild("Infra.Baz");
             }
@@ -138,8 +138,8 @@ describe("WebinyConfigFile", () => {
 
     it("does not insert a duplicate element on a second addChild call", () => {
         const file = createFile();
-        file.addChild("Infra.Foo");
-        file.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
         file.save();
         const count = (read().match(/<Infra\.Foo \/>/g) ?? []).length;
         expect(count).toBe(1);
@@ -147,13 +147,13 @@ describe("WebinyConfigFile", () => {
 
     it("warns when attempting to add an element that already exists", () => {
         const file = createFile();
-        file.addChild("ProjectAws"); // already in FIXTURE
+        file.jsx.addChild("ProjectAws"); // already in FIXTURE
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<ProjectAws>"));
     });
 
     it("does not warn when the element does not yet exist", () => {
         const file = createFile();
-        file.addChild("Infra.NewThing");
+        file.jsx.addChild("Infra.NewThing");
         expect(logger.warn).not.toHaveBeenCalled();
     });
 
@@ -161,7 +161,7 @@ describe("WebinyConfigFile", () => {
 
     it("merges children into existing parent instead of duplicating outer element", () => {
         const file = createFile();
-        file.addChild("Infra.Env.IsProd", {
+        file.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.addChild("Infra.Encryption", { props: { passphrase: 'process.env.X || ""' } });
             }
@@ -169,7 +169,7 @@ describe("WebinyConfigFile", () => {
         file.save();
 
         const file2 = new WebinyConfigFile(filePath, logger);
-        file2.addChild("Infra.Env.IsProd", {
+        file2.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.addChild("Infra.NewChild");
             }
@@ -184,7 +184,7 @@ describe("WebinyConfigFile", () => {
 
     it("warns when a nested child already exists during structural merge", () => {
         const file = createFile();
-        file.addChild("Infra.Env.IsProd", {
+        file.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.addChild("Infra.Encryption", { props: { passphrase: 'process.env.X || ""' } });
             }
@@ -193,7 +193,7 @@ describe("WebinyConfigFile", () => {
 
         const logger2 = createMockLogger();
         const file2 = new WebinyConfigFile(filePath, logger2);
-        file2.addChild("Infra.Env.IsProd", {
+        file2.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.addChild("Infra.Encryption"); // already exists
             }
@@ -203,7 +203,7 @@ describe("WebinyConfigFile", () => {
 
     it("handles 3 levels of nesting on initial insert", () => {
         const file = createFile();
-        file.addChild("Level1", {
+        file.jsx.addChild("Level1", {
             children: b1 => {
                 b1.addChild("Level2", {
                     children: b2 => {
@@ -223,7 +223,7 @@ describe("WebinyConfigFile", () => {
 
     it("structural merge at 3 levels deep adds the missing leaf without duplicating parents", () => {
         const file = createFile();
-        file.addChild("Level1", {
+        file.jsx.addChild("Level1", {
             children: b1 => {
                 b1.addChild("Level2", {
                     children: b2 => {
@@ -235,7 +235,7 @@ describe("WebinyConfigFile", () => {
         file.save();
 
         const file2 = new WebinyConfigFile(filePath, logger);
-        file2.addChild("Level1", {
+        file2.jsx.addChild("Level1", {
             children: b1 => {
                 b1.addChild("Level2", {
                     children: b2 => {
@@ -257,7 +257,7 @@ describe("WebinyConfigFile", () => {
 
     it("does nothing and warns when file has no JSX fragment", () => {
         const file = createFile("export const x = 1;");
-        file.addChild("Infra.Foo");
+        file.jsx.addChild("Infra.Foo");
         file.save();
         expect(read()).toBe("export const x = 1;");
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("No JSX fragment"));
@@ -267,21 +267,21 @@ describe("WebinyConfigFile", () => {
 
     it("inserts an element into an empty fragment", () => {
         const file = createFile(EMPTY_FIXTURE);
-        file.addChild("NewElement");
+        file.jsx.addChild("NewElement");
         file.save();
         expect(read()).toContain("<NewElement />");
     });
 
     it("inserts a child into an empty block element via structural merge", () => {
         const file = createFile(EMPTY_BLOCK_FIXTURE);
-        file.addChild("Level1", { children: b => b.addChild("NewChild") });
+        file.jsx.addChild("Level1", { children: b => b.addChild("NewChild") });
         file.save();
         expect(read()).toContain("<NewChild />");
     });
 
     it("skips non-element JSX nodes when searching for duplicates", () => {
         const file = createFile(JSX_EXPRESSION_FIXTURE);
-        file.addChild("NewElement");
+        file.jsx.addChild("NewElement");
         file.save();
         expect(read()).toContain("<NewElement />");
     });
@@ -290,14 +290,14 @@ describe("WebinyConfigFile", () => {
 
     it("save() writes mutations to disk", () => {
         const file = createFile();
-        file.addChild("Infra.NewThing");
+        file.jsx.addChild("Infra.NewThing");
         expect(read()).not.toContain("<Infra.NewThing />");
         file.save();
         expect(read()).toContain("<Infra.NewThing />");
     });
 });
 
-// ── addImport ─────────────────────────────────────────────────────────────────────────
+// ── imports ───────────────────────────────────────────────────────────────────────────
 
 const WITH_IMPORT_FIXTURE = `import { Infra } from "@webiny/extensions";
 
@@ -310,7 +310,7 @@ export const Extensions = () => {
 };
 `;
 
-describe("WebinyConfigFile — addImport", () => {
+describe("WebinyConfigFile — imports.add", () => {
     let tmpDir: string;
     let filePath: string;
     let logger: ReturnType<typeof createMockLogger>;
@@ -334,14 +334,14 @@ describe("WebinyConfigFile — addImport", () => {
 
     it("adds a new import declaration when no import from the package exists", () => {
         const file = createFile(FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
         file.save();
         expect(read()).toContain('import { Infra } from "@webiny/extensions"');
     });
 
     it("adds a named import to an existing import from the same package", () => {
         const file = createFile(WITH_IMPORT_FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: ["Api"] });
+        file.imports.add({ package: "@webiny/extensions", imports: ["Api"] });
         file.save();
         const content = read();
         expect(content).toContain("Infra");
@@ -352,14 +352,17 @@ describe("WebinyConfigFile — addImport", () => {
 
     it("supports aliased imports using { name: alias } syntax", () => {
         const file = createFile(FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: [{ Infra: "Infrastructure" }] });
+        file.imports.add({
+            package: "@webiny/extensions",
+            imports: [{ Infra: "Infrastructure" }]
+        });
         file.save();
         expect(read()).toContain("Infra as Infrastructure");
     });
 
     it("skips a duplicate and does not add the import a second time", () => {
         const file = createFile(WITH_IMPORT_FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
         file.save();
         const count = (read().match(/\bInfra\b/g) ?? []).length;
         expect(count).toBe(1);
@@ -367,13 +370,13 @@ describe("WebinyConfigFile — addImport", () => {
 
     it("warns when skipping a duplicate named import", () => {
         const file = createFile(WITH_IMPORT_FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: ["Infra"] });
+        file.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Infra"));
     });
 
     it("handles multiple imports in a single call", () => {
         const file = createFile(FIXTURE);
-        file.addImport({ package: "@webiny/extensions", imports: ["Infra", "Api"] });
+        file.imports.add({ package: "@webiny/extensions", imports: ["Infra", "Api"] });
         file.save();
         const content = read();
         expect(content).toContain("Infra");
@@ -384,7 +387,7 @@ describe("WebinyConfigFile — addImport", () => {
 
     it("handles a mix of plain and aliased imports in a single call", () => {
         const file = createFile(FIXTURE);
-        file.addImport({
+        file.imports.add({
             package: "@webiny/extensions",
             imports: ["Api", { Infra: "Infrastructure" }]
         });
@@ -410,7 +413,7 @@ const FIXTURE_WITH_BLOCK = `export const Extensions = () => {
 };
 `;
 
-describe("WebinyConfigFile — insertBefore", () => {
+describe("WebinyConfigFile — jsx.insertBefore", () => {
     let tmpDir: string;
     let filePath: string;
     let logger: ReturnType<typeof createMockLogger>;
@@ -434,7 +437,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("places element immediately before the ref (non-first child)", () => {
         const file = createFile();
-        file.insertBefore("ProjectAws", "Infra.Foo");
+        file.jsx.insertBefore("ProjectAws", "Infra.Foo");
         file.save();
         const content = read();
         expect(content).toContain("<Infra.Foo />");
@@ -446,7 +449,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("places element before the first child when ref is the first child", () => {
         const file = createFile();
-        file.insertBefore("Infra.ProductionEnvironments", "Infra.Foo");
+        file.jsx.insertBefore("Infra.ProductionEnvironments", "Infra.Foo");
         file.save();
         const content = read();
         expect(content).toContain("<Infra.Foo />");
@@ -457,7 +460,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("warns and appends at end when ref not found", () => {
         const file = createFile();
-        file.insertBefore("NonExistent", "Infra.Foo");
+        file.jsx.insertBefore("NonExistent", "Infra.Foo");
         file.save();
         const content = read();
         // Foo appended at end — after ProjectAws
@@ -467,7 +470,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("warns and no-ops when tag already exists", () => {
         const file = createFile();
-        file.insertBefore("ProjectAws", "Infra.ProductionEnvironments"); // already in fixture
+        file.jsx.insertBefore("ProjectAws", "Infra.ProductionEnvironments"); // already in fixture
         file.save();
         const content = read();
         const count = (content.match(/<Infra\.ProductionEnvironments/g) ?? []).length;
@@ -479,7 +482,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("warns and no-ops when tag already exists even with children callback", () => {
         const file = createFile();
-        file.insertBefore("ProjectAws", "Infra.ProductionEnvironments", {
+        file.jsx.insertBefore("ProjectAws", "Infra.ProductionEnvironments", {
             children: b => b.addChild("ShouldNotAppear")
         });
         file.save();
@@ -491,7 +494,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("warns and no-ops (no merge) when tag is an existing block element", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
-        file.insertBefore("ProjectAws", "Infra.Env.IsProd", {
+        file.jsx.insertBefore("ProjectAws", "Infra.Env.IsProd", {
             children: b => b.addChild("ShouldNotAppear")
         });
         file.save();
@@ -504,7 +507,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
-        file.addChild("Infra.Env.IsProd", {
+        file.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.insertBefore("ChildB", "NewChild");
             }
@@ -518,7 +521,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("warns and inserts into empty fragment when ref not found", () => {
         const file = createFile(EMPTY_FIXTURE);
-        file.insertBefore("NonExistent", "NewElement");
+        file.jsx.insertBefore("NonExistent", "NewElement");
         file.save();
         expect(read()).toContain("<NewElement />");
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("<NonExistent>"));
@@ -526,7 +529,7 @@ describe("WebinyConfigFile — insertBefore", () => {
 
     it("inserts before the first child of a nested JsxElement container", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
-        file.addChild("Infra.Env.IsProd", {
+        file.jsx.addChild("Infra.Env.IsProd", {
             children: b => b.insertBefore("ChildA", "NewFirst")
         });
         file.save();
@@ -536,7 +539,7 @@ describe("WebinyConfigFile — insertBefore", () => {
     });
 });
 
-describe("WebinyConfigFile — insertAfter", () => {
+describe("WebinyConfigFile — jsx.insertAfter", () => {
     let tmpDir: string;
     let filePath: string;
     let logger: ReturnType<typeof createMockLogger>;
@@ -560,7 +563,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("places element immediately after the ref", () => {
         const file = createFile();
-        file.insertAfter("Infra.ProductionEnvironments", "Infra.Foo");
+        file.jsx.insertAfter("Infra.ProductionEnvironments", "Infra.Foo");
         file.save();
         const content = read();
         expect(content).toContain("<Infra.Foo />");
@@ -572,7 +575,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("warns and appends at end when ref not found", () => {
         const file = createFile();
-        file.insertAfter("NonExistent", "Infra.Foo");
+        file.jsx.insertAfter("NonExistent", "Infra.Foo");
         file.save();
         const content = read();
         expect(content.indexOf("<ProjectAws />")).toBeLessThan(content.indexOf("<Infra.Foo />"));
@@ -581,7 +584,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("warns and no-ops when tag already exists", () => {
         const file = createFile();
-        file.insertAfter("Infra.ProductionEnvironments", "ProjectAws"); // already in fixture
+        file.jsx.insertAfter("Infra.ProductionEnvironments", "ProjectAws"); // already in fixture
         file.save();
         const content = read();
         const count = (content.match(/<ProjectAws \/>/g) ?? []).length;
@@ -591,7 +594,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("warns and no-ops when tag already exists even with children callback", () => {
         const file = createFile();
-        file.insertAfter("Infra.ProductionEnvironments", "ProjectAws", {
+        file.jsx.insertAfter("Infra.ProductionEnvironments", "ProjectAws", {
             children: b => b.addChild("ShouldNotAppear")
         });
         file.save();
@@ -601,7 +604,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("warns and no-ops (no merge) when tag is an existing block element", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
-        file.insertAfter("ProjectAws", "Infra.Env.IsProd", {
+        file.jsx.insertAfter("ProjectAws", "Infra.Env.IsProd", {
             children: b => b.addChild("ShouldNotAppear")
         });
         file.save();
@@ -614,7 +617,7 @@ describe("WebinyConfigFile — insertAfter", () => {
 
     it("works inside a children callback on an existing container (makeBuilder path)", () => {
         const file = createFile(FIXTURE_WITH_BLOCK);
-        file.addChild("Infra.Env.IsProd", {
+        file.jsx.addChild("Infra.Env.IsProd", {
             children: b => {
                 b.insertAfter("ChildA", "NewChild");
             }

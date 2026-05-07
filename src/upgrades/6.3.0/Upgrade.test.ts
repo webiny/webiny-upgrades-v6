@@ -31,7 +31,11 @@ const createContainer = (
         name: vi.fn().mockReturnValue(pmName),
         update: vi.fn().mockResolvedValue(undefined)
     });
-    const mockWebinyConfigFile = { addChild: vi.fn(), save: vi.fn() };
+    const mockWebinyConfigFile = {
+        imports: { add: vi.fn() },
+        jsx: { addChild: vi.fn(), insertBefore: vi.fn(), insertAfter: vi.fn() },
+        save: vi.fn()
+    };
     container.registerInstance(WebinyConfigTool, {
         read: vi.fn().mockReturnValue(mockWebinyConfigFile),
         save: vi.fn()
@@ -133,7 +137,7 @@ describe("Upgrade 6.3.0 - execute", () => {
         const upgrade = container.resolve(Upgrade);
         await upgrade.execute();
         const mockFile = vi.mocked(webinyConfigTool.read).mock.results[0].value;
-        expect(mockFile.addChild).toHaveBeenCalledWith(
+        expect(mockFile.jsx.addChild).toHaveBeenCalledWith(
             "Infra.Env.IsProd",
             expect.objectContaining({
                 comment: expect.stringContaining("Encryption"),

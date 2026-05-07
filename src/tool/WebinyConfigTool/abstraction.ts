@@ -3,10 +3,10 @@ import { createAbstraction } from "../../utils/createAbstraction.js";
 interface AddChildOptions {
     comment?: string;
     props?: Record<string, string>;
-    children?: (builder: IWebinyConfigBuilder) => void;
+    children?: (jsx: IWebinyConfigJsx) => void;
 }
 
-interface IWebinyConfigBuilder {
+interface IWebinyConfigJsx {
     addChild(tag: string, options?: AddChildOptions): void;
     insertBefore(ref: string, tag: string, options?: AddChildOptions): void;
     insertAfter(ref: string, tag: string, options?: AddChildOptions): void;
@@ -19,8 +19,13 @@ interface AddImportOptions {
     imports: IImportEntry[];
 }
 
-interface IWebinyConfigFile extends IWebinyConfigBuilder {
-    addImport(options: AddImportOptions): void;
+interface IWebinyConfigImports {
+    add(options: AddImportOptions): void;
+}
+
+interface IWebinyConfigFile {
+    imports: IWebinyConfigImports;
+    jsx: IWebinyConfigJsx;
     save(): void;
 }
 
@@ -34,7 +39,8 @@ export const WebinyConfigTool = createAbstraction<IWebinyConfigTool>("Tool/Webin
 export namespace WebinyConfigTool {
     export type Interface = IWebinyConfigTool;
     export type File = IWebinyConfigFile;
-    export type Builder = IWebinyConfigBuilder;
+    export type Jsx = IWebinyConfigJsx;
+    export type Imports = IWebinyConfigImports;
     export type ChildOptions = AddChildOptions;
     export type ImportEntry = IImportEntry;
     export type ImportOptions = AddImportOptions;

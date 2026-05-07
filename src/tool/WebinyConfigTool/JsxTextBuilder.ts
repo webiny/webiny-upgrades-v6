@@ -16,7 +16,7 @@ export class JsxTextBuilder {
         if (options.children) {
             const childLines: string[] = [];
             const childIndent = indent + "    ";
-            const syntheticBuilder: WebinyConfigTool.Builder = {
+            const syntheticBuilder: WebinyConfigTool.Jsx = {
                 addChild: (childTag: string, childOpts?: WebinyConfigTool.ChildOptions) => {
                     childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
                 },
