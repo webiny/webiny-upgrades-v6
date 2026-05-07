@@ -4,12 +4,12 @@ Detects and wraps the project's package manager (npm, yarn, or pnpm) behind a un
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `PackageManagerService` | abstraction + implementation | High-level service that delegates to the detected package manager; primary entry point for upgrade scripts. |
-| `PackageManagerName` | abstraction | DI token that holds the detected package manager name (`"yarn" \| "pnpm" \| "npm"`). |
-| `PackageManagerFeature` | feature | DI feature that auto-detects the package manager, registers `PackageManagerService`, and binds the correct concrete implementation. |
-| `PackageManagerDetectionError` | error class | Thrown when no lock file is found and no `--package-manager` override was provided. |
+| Export                         | Kind                         | Description                                                                                                                         |
+| ------------------------------ | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `PackageManagerService`        | abstraction + implementation | High-level service that delegates to the detected package manager; primary entry point for upgrade scripts.                         |
+| `PackageManagerName`           | abstraction                  | DI token that holds the detected package manager name (`"yarn" \| "pnpm" \| "npm"`).                                                |
+| `PackageManagerFeature`        | feature                      | DI feature that auto-detects the package manager, registers `PackageManagerService`, and binds the correct concrete implementation. |
+| `PackageManagerDetectionError` | error class                  | Thrown when no lock file is found and no `--package-manager` override was provided.                                                 |
 
 ## Usage
 
@@ -22,9 +22,9 @@ container.use(PackageManagerFeature);
 // Inside an upgrade step
 const pm = container.resolve(PackageManagerService);
 
-console.log(pm.name());           // "yarn" | "pnpm" | "npm"
-console.log(await pm.version());  // Version instance
+console.log(pm.name()); // "yarn" | "pnpm" | "npm"
+console.log(await pm.version()); // Version instance
 
-await pm.install();               // runs install with stdio inherited
-await pm.update("10.9.0");        // updates the package manager itself to a specific version
+await pm.install(); // runs install with stdio inherited
+await pm.update("10.9.0"); // updates the package manager itself to a specific version
 ```

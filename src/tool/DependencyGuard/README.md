@@ -4,12 +4,12 @@ Scans a project's `package.json` (across `dependencies`, `devDependencies`, `pee
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `DependencyGuard` | abstraction token | DI token and namespace for the guard; resolves to a `DependencyGuard.Interface` instance. |
-| `DependencyGuard.Interface` | type | Contract for the guard: a single `execute()` method returning an array of mismatches. |
-| `DependencyGuard.Mismatch` | type | Shape of a single version mismatch: `{ name, userVersion, expectedVersion }`. |
-| `DependencyGuardFeature` | feature | DI feature that registers the concrete `DependencyGuardImpl` against the `DependencyGuard` token. |
+| Export                      | Kind              | Description                                                                                       |
+| --------------------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
+| `DependencyGuard`           | abstraction token | DI token and namespace for the guard; resolves to a `DependencyGuard.Interface` instance.         |
+| `DependencyGuard.Interface` | type              | Contract for the guard: a single `execute()` method returning an array of mismatches.             |
+| `DependencyGuard.Mismatch`  | type              | Shape of a single version mismatch: `{ name, userVersion, expectedVersion }`.                     |
+| `DependencyGuardFeature`    | feature           | DI feature that registers the concrete `DependencyGuardImpl` against the `DependencyGuard` token. |
 
 ## Usage
 
@@ -23,9 +23,9 @@ const guard = container.resolve(DependencyGuard);
 const mismatches = guard.execute();
 
 if (mismatches.length > 0) {
-    for (const m of mismatches) {
-        console.warn(`${m.name}: found ${m.userVersion}, expected ${m.expectedVersion}`);
-    }
+  for (const m of mismatches) {
+    console.warn(`${m.name}: found ${m.userVersion}, expected ${m.expectedVersion}`);
+  }
 }
 ```
 

@@ -20,28 +20,30 @@ npx https://github.com/webiny/webiny-upgrades-v6 6.1.0 --cwd /path/to/my-webiny-
 
 ## Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `version` | positional | — | Target upgrade version (required, must be valid semver) |
-| `--cwd` | string | `process.cwd()` | Path to the Webiny project root |
-| `--registry` | string | `https://registry.npmjs.org` | npm registry URL |
-| `--debug` | boolean | `false` | Enable verbose debug logging |
-| `--force` | boolean | `false` | Re-run upgrade even if already applied (based on installed version) |
-| `--package-manager` | string | auto-detect | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted) |
-| `--dry-run` | boolean | `false` | Resolve upgrades and build the pool but do not execute them |
-| `--skip-dependency-guard` | boolean | `true` | Skip the dependency guard mismatch check |
-| `--install-version` | string | — | Override the npm version written to package.json for `@webiny/*` packages. Use when the upgrade script version differs from the published package version (e.g. `--install-version 0.0.0-unstable.abcde`) |
+| Option                    | Type       | Default                      | Description                                                                                                                                                                                               |
+| ------------------------- | ---------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`                 | positional | —                            | Target upgrade version (required, must be valid semver)                                                                                                                                                   |
+| `--cwd`                   | string     | `process.cwd()`              | Path to the Webiny project root                                                                                                                                                                           |
+| `--registry`              | string     | `https://registry.npmjs.org` | npm registry URL                                                                                                                                                                                          |
+| `--debug`                 | boolean    | `false`                      | Enable verbose debug logging                                                                                                                                                                              |
+| `--force`                 | boolean    | `false`                      | Re-run upgrade even if already applied (based on installed version)                                                                                                                                       |
+| `--package-manager`       | string     | auto-detect                  | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted)                                                                                                                     |
+| `--dry-run`               | boolean    | `false`                      | Resolve upgrades and build the pool but do not execute them                                                                                                                                               |
+| `--skip-dependency-guard` | boolean    | `true`                       | Skip the dependency guard mismatch check                                                                                                                                                                  |
+| `--install-version`       | string     | —                            | Override the npm version written to package.json for `@webiny/*` packages. Use when the upgrade script version differs from the published package version (e.g. `--install-version 0.0.0-unstable.abcde`) |
 
 ## Output
 
 When run with `--json`, the tool writes NDJSON to stdout. The final line signals termination:
 
 **Success:**
+
 ```json
 { "type": "done", "message": "Upgrade completed in 1.5s." }
 ```
 
 **Error:**
+
 ```json
 { "type": "fatal", "message": "Upgrade failed in 0.3s." }
 ```
@@ -77,46 +79,49 @@ import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
-    public readonly version = Version.create("6.2.0");
+  public readonly version = Version.create("6.2.0");
 
-    public constructor(
-        private readonly packageJsonTool: PackageJsonTool.Interface,
-        private readonly webinyConfigTool: WebinyConfigTool.Interface
-    ) {}
+  public constructor(
+    private readonly packageJsonTool: PackageJsonTool.Interface,
+    private readonly webinyConfigTool: WebinyConfigTool.Interface
+  ) {}
 
-    public async canHandle({ targetVersion, currentVersion }: UpgradeAbstraction.Params): Promise<boolean> {
-        return this.version.between(currentVersion, targetVersion);
-    }
+  public async canHandle({
+    targetVersion,
+    currentVersion
+  }: UpgradeAbstraction.Params): Promise<boolean> {
+    return this.version.between(currentVersion, targetVersion);
+  }
 
-    public async execute(): Promise<void> {
-        // Mutate package.json
-        const packageJson = this.packageJsonTool.loadOrThrow();
-        packageJson.setDevDependency("some-package", "1.0.0");
-        this.packageJsonTool.save(packageJson);
+  public async execute(): Promise<void> {
+    // Mutate package.json
+    const packageJson = this.packageJsonTool.loadOrThrow();
+    packageJson.setDevDependency("some-package", "1.0.0");
+    this.packageJsonTool.save(packageJson);
 
-        // Mutate webiny.config.tsx
-        // file.imports.add — add named imports (merges into existing declaration, skips duplicates)
-        // file.jsx.addChild — structural merge into existing parents (warns and skips duplicates)
-        // file.jsx.insertBefore / insertAfter — position a new element relative to a named sibling
-        const webinyConfig = this.webinyConfigTool.read();
-        webinyConfig.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
-        webinyConfig.jsx.addChild("Infra.Env.IsProd", {
-            children: (children) => {
-                children.addChild("Infra.Encryption", {
-                    props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }
-                });
-            }
+    // Mutate webiny.config.tsx
+    // file.imports.add — add named imports (merges into existing declaration, skips duplicates)
+    // file.jsx.addChild — structural merge into existing parents (warns and skips duplicates)
+    // file.jsx.insertBefore / insertAfter — position a new element relative to a named sibling
+    const webinyConfig = this.webinyConfigTool.read();
+    webinyConfig.imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
+    webinyConfig.jsx.addChild("Infra.Env.IsProd", {
+      children: children => {
+        children.addChild("Infra.Encryption", {
+          props: { passphrase: 'process.env.WEBINY_ENCRYPTION_PASSPHRASE || ""' }
         });
-        this.webinyConfigTool.save(webinyConfig);
+      }
+    });
+    this.webinyConfigTool.save(webinyConfig);
 
-        // Do NOT call upWebiny.execute() — the handler pins all @webiny/*
-        // packages to the target version after all upgrade steps complete.
-    }
+    // Do NOT call upWebiny.execute() — the handler pins all @webiny/*
+    // packages to the target version after all upgrade steps complete.
+  }
 }
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
-    implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool, WebinyConfigTool]
+  implementation: UpgradeImpl,
+  dependencies: [PackageJsonTool, WebinyConfigTool]
 });
 ```
 
@@ -127,10 +132,10 @@ import { createFeature } from "../../utils/createFeature.js";
 import { Upgrade } from "./Upgrade.js";
 
 export default createFeature({
-    name: "Upgrade 6.2.0",
-    register(container) {
-        container.register(Upgrade);
-    }
+  name: "Upgrade 6.2.0",
+  register(container) {
+    container.register(Upgrade);
+  }
 });
 ```
 
@@ -140,36 +145,36 @@ The runner will automatically discover and execute the script when `6.2.0` is pa
 
 ### Base (`src/base/`)
 
-| Module | Description |
-|---|---|
+| Module                                        | Description                                                                   |
+| --------------------------------------------- | ----------------------------------------------------------------------------- |
 | [Application](src/base/Application/README.md) | Top-level entry point; drives the full upgrade run and exits via `Responder`. |
-| [Container](src/base/Container/README.md) | Makes the DI container itself injectable via a `Container` token. |
-| [Context](src/base/Context/README.md) | Holds runtime state: `cwd`, versions, `setCurrentVersion`, `resolve`. |
-| [Input](src/base/Input/README.md) | Parsed CLI flags (`cwd`, `version`, `dryRun`, `forceUpgrade`, etc.). |
-| [Logger](src/base/Logger/README.md) | pino-backed logging with `pretty` and `json` output modes. |
-| [Responder](src/base/Responder/README.md) | Logs final success/error and exits the process with the correct code. |
-| [Timer](src/base/Timer/README.md) | Wraps async operations with start/end timing instrumentation. |
-| [Upgrade](src/base/Upgrade/README.md) | Interface all versioned upgrade steps must implement. |
-| [Version](src/base/Version/README.md) | Immutable semver wrapper with comparison helpers and pre-release stripping. |
+| [Container](src/base/Container/README.md)     | Makes the DI container itself injectable via a `Container` token.             |
+| [Context](src/base/Context/README.md)         | Holds runtime state: `cwd`, versions, `setCurrentVersion`, `resolve`.         |
+| [Input](src/base/Input/README.md)             | Parsed CLI flags (`cwd`, `version`, `dryRun`, `forceUpgrade`, etc.).          |
+| [Logger](src/base/Logger/README.md)           | pino-backed logging with `pretty` and `json` output modes.                    |
+| [Responder](src/base/Responder/README.md)     | Logs final success/error and exits the process with the correct code.         |
+| [Timer](src/base/Timer/README.md)             | Wraps async operations with start/end timing instrumentation.                 |
+| [Upgrade](src/base/Upgrade/README.md)         | Interface all versioned upgrade steps must implement.                         |
+| [Version](src/base/Version/README.md)         | Immutable semver wrapper with comparison helpers and pre-release stripping.   |
 
 ### Services (`src/service/`)
 
-| Module | Description |
-|---|---|
-| [Git](src/service/Git/README.md) | Checks working-tree cleanliness and rolls back changes via `git restore`. |
-| [PackageJson](src/service/PackageJson/README.md) | Low-level load/mutate/save for any `package.json` file. |
-| [PackageManager](src/service/PackageManager/README.md) | Auto-detects yarn/pnpm/npm and exposes `install`, `version`, `update`. |
-| [References](src/service/References/README.md) | Reads `references.json` from `@webiny/cli` for canonical dependency versions. |
-| [Registry](src/service/Registry/README.md) | Queries an npm registry for latest or specific package versions. |
+| Module                                                 | Description                                                                    |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| [Git](src/service/Git/README.md)                       | Checks working-tree cleanliness and rolls back changes via `git restore`.      |
+| [PackageJson](src/service/PackageJson/README.md)       | Low-level load/mutate/save for any `package.json` file.                        |
+| [PackageManager](src/service/PackageManager/README.md) | Auto-detects yarn/pnpm/npm and exposes `install`, `version`, `update`.         |
+| [References](src/service/References/README.md)         | Reads `references.json` from `@webiny/cli` for canonical dependency versions.  |
+| [Registry](src/service/Registry/README.md)             | Queries an npm registry for latest or specific package versions.               |
 | [UpgradeHandler](src/service/UpgradeHandler/README.md) | Orchestrates a single version's upgrade lifecycle with git guard and rollback. |
-| [UpgradeRunner](src/service/UpgradeRunner/README.md) | Discovers and runs versioned upgrade directories in semver order. |
+| [UpgradeRunner](src/service/UpgradeRunner/README.md)   | Discovers and runs versioned upgrade directories in semver order.              |
 
 ### Tools (`src/tool/`)
 
-| Module | Description |
-|---|---|
-| [DependencyGuard](src/tool/DependencyGuard/README.md) | Detects third-party dependency version drift against `references.json`. |
-| [PackageJsonTool](src/tool/PackageJsonTool/README.md) | Context-aware `PackageJson` wrapper that defaults to the project's `cwd`. |
-| [UpWebiny](src/tool/UpWebiny/README.md) | Pins all `@webiny/*` packages to a target version and normalises placement. |
-| [UpgradeHistory](src/tool/UpgradeHistory/README.md) | Persists and queries the upgrade history inside `package.json`. |
-| [WebinyConfigTool](src/tool/WebinyConfigTool/README.md) | Reads and mutates `webiny.config.tsx` via ts-morph AST. |
+| Module                                                  | Description                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [DependencyGuard](src/tool/DependencyGuard/README.md)   | Detects third-party dependency version drift against `references.json`.     |
+| [PackageJsonTool](src/tool/PackageJsonTool/README.md)   | Context-aware `PackageJson` wrapper that defaults to the project's `cwd`.   |
+| [UpWebiny](src/tool/UpWebiny/README.md)                 | Pins all `@webiny/*` packages to a target version and normalises placement. |
+| [UpgradeHistory](src/tool/UpgradeHistory/README.md)     | Persists and queries the upgrade history inside `package.json`.             |
+| [WebinyConfigTool](src/tool/WebinyConfigTool/README.md) | Reads and mutates `webiny.config.tsx` via ts-morph AST.                     |

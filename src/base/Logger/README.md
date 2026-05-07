@@ -4,12 +4,12 @@ Provides structured logging for the upgrade framework via a DI-registered abstra
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Logger` | abstraction token | DI token used to resolve the logger; also exposes `Logger.Interface` for typing. |
-| `Logger.Interface` | type | Interface with `debug`, `info`, `warn`, `error`, `fatal`, and `done` methods. |
-| `LoggerFeature` | feature | Registers a `PinoLogger` instance into the container; accepts `logLevel` and `json` params. |
-| `PinoLogger` | class | Concrete pino-backed implementation of `Logger.Interface`; supports `pretty` and `json` transports. |
+| Export             | Kind              | Description                                                                                         |
+| ------------------ | ----------------- | --------------------------------------------------------------------------------------------------- |
+| `Logger`           | abstraction token | DI token used to resolve the logger; also exposes `Logger.Interface` for typing.                    |
+| `Logger.Interface` | type              | Interface with `debug`, `info`, `warn`, `error`, `fatal`, and `done` methods.                       |
+| `LoggerFeature`    | feature           | Registers a `PinoLogger` instance into the container; accepts `logLevel` and `json` params.         |
+| `PinoLogger`       | class             | Concrete pino-backed implementation of `Logger.Interface`; supports `pretty` and `json` transports. |
 
 ## Usage
 
@@ -18,9 +18,7 @@ import { Logger, LoggerFeature } from "./base/Logger/index.js";
 
 // 1. Register the feature when bootstrapping the framework
 const app = createApplication({
-    features: [
-        LoggerFeature({ logLevel: "info", json: false })
-    ]
+  features: [LoggerFeature({ logLevel: "info", json: false })]
 });
 
 // 2. Resolve and use the logger inside an upgrade script or service

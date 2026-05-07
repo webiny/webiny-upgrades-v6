@@ -4,12 +4,12 @@ A context-aware wrapper around `PackageJsonService` that defaults to loading `pa
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `PackageJsonTool` | abstraction token | DI token for the tool (`load`, `loadOrThrow`, `save`). |
-| `PackageJsonTool.Interface` | type | `{ load(target?): File \| null; loadOrThrow(target?): File; save(file): void }` |
-| `PackageJsonTool.File` | type | Alias for `PackageJsonService.File` (the mutable file object). |
-| `PackageJsonToolFeature` | feature | Registers the concrete `PackageJsonToolImpl` into the DI container. |
+| Export                      | Kind              | Description                                                                     |
+| --------------------------- | ----------------- | ------------------------------------------------------------------------------- |
+| `PackageJsonTool`           | abstraction token | DI token for the tool (`load`, `loadOrThrow`, `save`).                          |
+| `PackageJsonTool.Interface` | type              | `{ load(target?): File \| null; loadOrThrow(target?): File; save(file): void }` |
+| `PackageJsonTool.File`      | type              | Alias for `PackageJsonService.File` (the mutable file object).                  |
+| `PackageJsonToolFeature`    | feature           | Registers the concrete `PackageJsonToolImpl` into the DI container.             |
 
 ## Usage
 

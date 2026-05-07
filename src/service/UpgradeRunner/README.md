@@ -4,16 +4,16 @@ Discovers, loads, and executes versioned upgrade scripts in order. It scans the 
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `UpgradeRunner` | abstraction + implementation | Core service; call `.run()` to execute all upgrade scripts in version order. |
-| `UpgradeRunner.Interface` | type | Contract: `{ run(): Promise<void> }` |
-| `UpgradeRunnerFeature` | feature | DI feature that registers `UpgradeRunner` and the default `UpgradesDirectory` path. |
-| `UpgradesDirectory` | abstraction token | String token resolving to the path where versioned upgrade directories live. |
-| `UpgradeFeatureExportError` | error | Thrown when a versioned `index.ts` does not export a valid feature as its default export. |
-| `UpgradeIndexMissingError` | error | Thrown when a versioned upgrade directory is missing its `index.ts` entry point. |
-| `UpgradesDirectoryEmptyError` | error | Thrown when the upgrades directory exists but contains no versioned subdirectories. |
-| `UpgradesDirectoryNotFoundError` | error | Thrown when the upgrades directory path does not exist on disk. |
+| Export                           | Kind                         | Description                                                                               |
+| -------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------- |
+| `UpgradeRunner`                  | abstraction + implementation | Core service; call `.run()` to execute all upgrade scripts in version order.              |
+| `UpgradeRunner.Interface`        | type                         | Contract: `{ run(): Promise<void> }`                                                      |
+| `UpgradeRunnerFeature`           | feature                      | DI feature that registers `UpgradeRunner` and the default `UpgradesDirectory` path.       |
+| `UpgradesDirectory`              | abstraction token            | String token resolving to the path where versioned upgrade directories live.              |
+| `UpgradeFeatureExportError`      | error                        | Thrown when a versioned `index.ts` does not export a valid feature as its default export. |
+| `UpgradeIndexMissingError`       | error                        | Thrown when a versioned upgrade directory is missing its `index.ts` entry point.          |
+| `UpgradesDirectoryEmptyError`    | error                        | Thrown when the upgrades directory exists but contains no versioned subdirectories.       |
+| `UpgradesDirectoryNotFoundError` | error                        | Thrown when the upgrades directory path does not exist on disk.                           |
 
 ## Usage
 

@@ -4,24 +4,24 @@ Holds the runtime context for an upgrade run — the working directory, registry
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Context` | abstraction token | DI token for the context object; resolved by any service that needs run-time path or version data. |
-| `Context.Interface` | type | Full interface: `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion`, `currentVersion`, `setCurrentVersion(v)`, `resolve(...segments)`. |
-| `ContextFeature` | feature | Registers a `Context` instance into the container. |
+| Export              | Kind              | Description                                                                                                                                               |
+| ------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Context`           | abstraction token | DI token for the context object; resolved by any service that needs run-time path or version data.                                                        |
+| `Context.Interface` | type              | Full interface: `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion`, `currentVersion`, `setCurrentVersion(v)`, `resolve(...segments)`. |
+| `ContextFeature`    | feature           | Registers a `Context` instance into the container.                                                                                                        |
 
 ### `Context.Interface` members
 
-| Member | Description |
-|---|---|
-| `cwd` | Absolute path to the project being upgraded. |
-| `registry` | npm-compatible registry URL used for version queries. |
-| `inputVersion` | Raw version string received from the CLI. |
-| `targetVersion` | Parsed `Version` the run is upgrading to. |
-| `installedVersion` | `Version` read from `node_modules` at startup; never changes. |
-| `currentVersion` | Logical progress cursor; advances after each step. |
-| `setCurrentVersion(v)` | Advances `currentVersion` — called by `UpgradeHandler`. |
-| `resolve(...segments)` | Resolves path segments relative to `cwd`. |
+| Member                 | Description                                                   |
+| ---------------------- | ------------------------------------------------------------- |
+| `cwd`                  | Absolute path to the project being upgraded.                  |
+| `registry`             | npm-compatible registry URL used for version queries.         |
+| `inputVersion`         | Raw version string received from the CLI.                     |
+| `targetVersion`        | Parsed `Version` the run is upgrading to.                     |
+| `installedVersion`     | `Version` read from `node_modules` at startup; never changes. |
+| `currentVersion`       | Logical progress cursor; advances after each step.            |
+| `setCurrentVersion(v)` | Advances `currentVersion` — called by `UpgradeHandler`.       |
+| `resolve(...segments)` | Resolves path segments relative to `cwd`.                     |
 
 ## Usage
 

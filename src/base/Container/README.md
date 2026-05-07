@@ -4,11 +4,11 @@ A thin DI token that makes the `@webiny/di` container instance itself injectable
 
 ## API
 
-| Export | Kind | Description |
-|---|---|---|
-| `Container` | abstraction token | DI token resolving to the active `@webiny/di` container instance. |
-| `Container.Interface` | type | Alias for the `DIContainer` type from `@webiny/di`. |
-| `ContainerFeature` | feature | Registers the container instance against the `Container` token via `registerInstance`. |
+| Export                | Kind              | Description                                                                            |
+| --------------------- | ----------------- | -------------------------------------------------------------------------------------- |
+| `Container`           | abstraction token | DI token resolving to the active `@webiny/di` container instance.                      |
+| `Container.Interface` | type              | Alias for the `DIContainer` type from `@webiny/di`.                                    |
+| `ContainerFeature`    | feature           | Registers the container instance against the `Container` token via `registerInstance`. |
 
 ## Usage
 
@@ -20,6 +20,6 @@ container.use(ContainerFeature);
 
 // Resolve the container itself from a service constructor
 class MyService {
-    constructor(private readonly container: Container.Interface) {}
+  constructor(private readonly container: Container.Interface) {}
 }
 ```
