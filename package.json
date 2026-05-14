@@ -10,9 +10,9 @@
     "build": "tsc --noEmit",
     "format:fix": "oxfmt",
     "format:check": "oxfmt --check",
-    "eslint": "eslint \"**/*.{js,ts}\" --max-warnings=0",
-    "eslint:fix": "yarn eslint --fix",
-    "lint:fix": "yarn eslint --fix && yarn format:fix",
+    "lint:check": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix",
+    "full:fix": "yarn format:fix && yarn lint:fix",
     "adio:check": "adio"
   },
   "dependencies": {
@@ -31,18 +31,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^24.12.2",
+    "@types/node": "^24.12.4",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.35",
-    "@typescript-eslint/eslint-plugin": "^8.59.2",
-    "@typescript-eslint/parser": "^8.59.2",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "^4.1.6",
     "adio": "^3.0.0",
-    "eslint": "^10.3.0",
-    "eslint-plugin-import-x": "^4.16.2",
-    "oxfmt": "^0.48.0",
-    "prettier": "3.8.3",
-    "vitest": "^4.1.5"
+    "oxfmt": "^0.49.0",
+    "oxlint": "^1.64.0",
+    "vitest": "^4.1.6"
   },
   "engines": {
     "node": ">=24.0.0"

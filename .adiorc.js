@@ -9,7 +9,7 @@ export default {
       "@vitest/coverage-v8",
       "adio",
       "oxfmt",
-      "prettier"
+      "oxlint"
     ],
     peerDependencies: true
   },
