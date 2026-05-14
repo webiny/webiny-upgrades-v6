@@ -38,7 +38,6 @@
     "adio": "^3.0.0",
     "oxfmt": "^0.49.0",
     "oxlint": "^1.64.0",
-    "prettier": "3.8.3",
     "vitest": "^4.1.6"
   },
   "engines": {
