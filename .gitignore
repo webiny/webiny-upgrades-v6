@@ -29,3 +29,4 @@ cypress.json
 !.yarn/versions
 .pnp.*
 .claude/projects
+.claude/*.local.*
