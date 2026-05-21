@@ -1002,12 +1002,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@webiny/di@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@webiny/di@npm:1.0.0"
+"@webiny/di@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@webiny/di@npm:1.0.1"
   dependencies:
     reflect-metadata: "npm:^0.2.2"
-  checksum: 10/940b900920273fc8f911dca57b333a6d6d3500e9818e9e23d70573fc738822c5f568a572904e6ddcefbc38ef0f43919a8889e16f054d6f67a511a71a559ef669
+  checksum: 10/61e017b44608d1479d1d5cf8ed923e75c1eebb02f65aee858fe040adbc88447924618e8350c25d62a33fefb350bf7a21b9f4b22fb7c872b2514bb7a92757d7b9
   languageName: node
   linkType: hard
 
@@ -2596,9 +2596,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.22.1":
-  version: 4.22.1
-  resolution: "tsx@npm:4.22.1"
+"tsx@npm:^4.22.3":
+  version: 4.22.3
+  resolution: "tsx@npm:4.22.3"
   dependencies:
     esbuild: "npm:~0.28.0"
     fsevents: "npm:~2.3.3"
@@ -2607,7 +2607,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10/67915e7c7b66eb92da27ab9c777bae660944f01aaa340c92abde44f09d2c191cf70f46325de0a55ac76d70114ceb4dab9804f7ce416ebf194e0039718b2684ea
+  checksum: 10/bb1cf6b478c7bf79a99b52b715327c0d70a16461146062af1bde3d499a53220d66669e10a98abc25beed5d67a19c26466394500dc0048a67eaae05fad111cee7
   languageName: node
   linkType: hard
 
@@ -2794,7 +2794,7 @@ __metadata:
     "@types/semver": "npm:^7.7.1"
     "@types/yargs": "npm:^17.0.35"
     "@vitest/coverage-v8": "npm:^4.1.6"
-    "@webiny/di": "npm:^1.0.0"
+    "@webiny/di": "npm:^1.0.1"
     adio: "npm:^3.0.0"
     execa: "npm:^9.6.1"
     load-json-file: "npm:^7.0.1"
@@ -2804,7 +2804,7 @@ __metadata:
     pino-pretty: "npm:^13.1.3"
     semver: "npm:^7.8.0"
     ts-morph: "npm:^28.0.0"
-    tsx: "npm:^4.22.1"
+    tsx: "npm:^4.22.3"
     type-fest: "npm:^5.6.0"
     typescript: "npm:6.0.3"
     vitest: "npm:^4.1.6"
