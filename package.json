@@ -31,14 +31,14 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^24.12.4",
+    "@types/node": "^25.9.1",
     "@types/semver": "^7.7.1",
     "@types/yargs": "^17.0.35",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "adio": "^3.0.0",
-    "oxfmt": "^0.50.0",
-    "oxlint": "^1.65.0",
-    "vitest": "^4.1.6"
+    "oxfmt": "^0.51.0",
+    "oxlint": "^1.66.0",
+    "vitest": "^4.1.7"
   },
   "engines": {
     "node": ">=24.0.0"
