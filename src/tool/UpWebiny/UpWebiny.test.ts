@@ -112,6 +112,21 @@ describe("UpWebiny", () => {
             expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
         });
 
+        it("does not upgrade packages in the doNotUpgrade list", async () => {
+            const file = createMockPackageJsonFile({
+                dependencies: {
+                    "@webiny/di": "1.0.2",
+                    "@webiny/stdlib": "0.0.4",
+                    "@webiny/cli": "6.0.0"
+                }
+            });
+            const tool = createContainer(file).resolve(UpWebiny);
+            tool.execute({ version: v("6.1.0") });
+            expect(file.getDependency("@webiny/di")).toBe("1.0.2");
+            expect(file.getDependency("@webiny/stdlib")).toBe("0.0.4");
+            expect(file.getDependency("@webiny/cli")).toBe("6.1.0");
+        });
+
         it("saves package.json after updating dependencies", async () => {
             const file = createMockPackageJsonFile();
             const container = createContainer(file);

@@ -119,6 +119,20 @@ describe("WebinyConfigImports — add", () => {
         expect(count).toBe(1);
     });
 
+    it("adds an aliased import to an existing import declaration", () => {
+        const { imports, save, read } = createImports(WITH_IMPORT_FIXTURE);
+        imports.add({
+            package: "@webiny/extensions",
+            imports: [{ Api: "WebinyApi" }]
+        });
+        save();
+        const content = read();
+        expect(content).toContain("Api as WebinyApi");
+        expect(content).toContain("Infra");
+        const count = (content.match(/from "@webiny\/extensions"/g) ?? []).length;
+        expect(count).toBe(1);
+    });
+
     it("handles a mix of plain and aliased imports in a single call", () => {
         const { imports, save, read } = createImports(FIXTURE);
         imports.add({

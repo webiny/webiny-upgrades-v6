@@ -1,8 +1,13 @@
 import { UpWebiny as UpWebinyAbstraction } from "./abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 
+const doNotUpgrade = ["@webiny/di", "@webiny/stdlib"];
+
 const isWebinyUpgradeable = (dep: string): boolean => {
-    return dep.startsWith("@webiny/") && dep !== "@webiny/di";
+    if (doNotUpgrade.includes(dep)) {
+        return false;
+    }
+    return dep.startsWith("@webiny/");
 };
 
 class UpWebinyImpl implements UpWebinyAbstraction.Interface {
