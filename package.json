@@ -36,8 +36,8 @@
     "@types/yargs": "^17.0.35",
     "@vitest/coverage-v8": "^4.1.7",
     "adio": "^3.0.0",
-    "oxfmt": "^0.51.0",
-    "oxlint": "^1.66.0",
+    "oxfmt": "^0.52.0",
+    "oxlint": "^1.67.0",
     "vitest": "^4.1.7"
   },
   "engines": {
