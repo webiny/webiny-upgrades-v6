@@ -18,12 +18,12 @@ Dependency injection via `@webiny/di`. Everything is an abstraction with an impl
 
 ### Layers
 
-| Layer    | Location                  | Purpose                                                                                                                |
-| -------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Base     | `src/base/`               | Core abstractions: `Application`, `Responder`, `Context`, `Input`, `Upgrade`, `Container`, `Version`                   |
-| Services | `src/service/`            | Single-responsibility: `Logger`, `PackageJson`, `PackageManager`, `Registry`, `Git`, `UpgradeHandler`, `UpgradeRunner` |
-| Tools    | `src/tool/`               | Orchestrate services: `UpWebiny`, `PackageJsonTool`, `WebinyConfigTool`, `DependencyGuard`, `UpgradeHistory`           |
-| Upgrades | `src/upgrades/<version>/` | Version-specific upgrade scripts                                                                                       |
+| Layer    | Location                  | Purpose                                                                                                                     |
+| -------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Base     | `src/base/`               | Core abstractions: `Application`, `Responder`, `Context`, `Input`, `Upgrade`, `Container`, `Version`                        |
+| Services | `src/service/`            | Single-responsibility: `Logger`, `PackageJson`, `PackageManager`, `Registry`, `Git`, `UpgradeHandler`, `UpgradeRunner`      |
+| Tools    | `src/tool/`               | Orchestrate services: `UpWebiny`, `PackageJsonTool`, `WebinyConfigTool`, `DependencyGuard`, `YarnrcGuard`, `UpgradeHistory` |
+| Upgrades | `src/upgrades/<version>/` | Version-specific upgrade scripts                                                                                            |
 
 ### Patterns
 
@@ -50,46 +50,48 @@ createContainer()  (async, src/container.ts)
   ├─ responder       → Responder (handles process exit and done signal)
   ├─ services        → PackageJson, PackageManager, Registry, References
   ├─ context         → resolves target version from npm registry, registers Context
-  ├─ tools           → Git, UpWebiny, PackageJsonTool, WebinyConfigTool, DependencyGuard, UpgradeHistory
+  ├─ tools           → Git, UpWebiny, PackageJsonTool, WebinyConfigTool, DependencyGuard, YarnrcGuard, UpgradeHistory
   ├─ handler         → UpgradeHandler
   ├─ runner          → UpgradeRunner (loads upgrade scripts dynamically)
   └─ application     → Application
 
 Application.execute()
   ├─ early return if target === installed version
-  ├─ runDependencyGuard() — logs warnings if mismatches found
-  └─ UpgradeRunner.run()
-       ├─ loads src/upgrades/<version>/index.ts
-       ├─ registers the upgrade feature into the container
-       └─ UpgradeHandler.handle()
-            ├─ git.isClean() — aborts if repo is dirty
-            ├─ collects upgrades whose canHandle() returns true and not in history
-            ├─ if dryRun: returns early (no changes)
-            ├─ calls execute() on each in semver order
-            ├─ records each step in upgrade history (package.json webiny.history)
-            ├─ on failure: git.restore() + rethrow
-            ├─ on success: upWebiny.execute(installVersion or targetVersion) to pin final versions
-            └─ packageManager.install() (changes left unstaged — no commit)
+  ├─ YarnrcGuard.execute() — info if target < 6.5.0, hard-abort if ≥ 6.5.0
+  ├─ UpgradeRunner.run()
+  │    ├─ loads src/upgrades/<version>/index.ts
+  │    ├─ registers the upgrade feature into the container
+  │    └─ UpgradeHandler.handle()
+  │         ├─ git.isClean() — aborts if repo is dirty
+  │         ├─ collects upgrades whose canHandle() returns true and not in history
+  │         ├─ if dryRun: returns early (no changes)
+  │         ├─ calls execute() on each in semver order
+  │         ├─ records each step in upgrade history (package.json webiny.history)
+  │         ├─ on failure: git.restore() + rethrow
+  │         ├─ on success: upWebiny.execute(installVersion or targetVersion) to pin final versions
+  │         └─ packageManager.install() (changes left unstaged — no commit)
+  └─ runDependencyGuard() — logs warnings if mismatches found
 ```
 
 ## Available Services
 
 Use relative imports — `~/` aliases are not available in all contexts.
 
-| Abstraction             | Location                          | What it does                                                                                                                                                                                                                                                                                                                     |
-| ----------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Context`               | `base/Context/index.js`           | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (advances after each upgrade step), `setCurrentVersion()`, `resolve()`                                                                                                                                            |
-| `Logger`                | `base/Logger/index.js`            | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `{ _done: true }` metadata; JSON transport maps it to `type: "done"`)                                                                                                                                                       |
-| `PackageJsonService`    | `service/PackageJson/index.js`    | `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void` — low-level load/save for any `package.json` path. See **PackageJsonFile API** below.                                                         |
-| `PackageManagerService` | `service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — higher-level wrapper; `name()` returns the detected package manager for the project. Auto-detected from lock file (yarn.lock → pnpm-lock.yaml → package-lock.json); override with `--package-manager`                                                            |
-| `RegistryService`       | `service/Registry/index.js`       | `getLatestVersion(name: string): Promise<Version \| null>` — resolves `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version.                                                                                                                         |
-| `Git`                   | `service/Git/index.js`            | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo                                                                                                                                                                                         |
-| `UpWebiny`              | `tool/UpWebiny/index.js`          | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves. |
-| `PackageJsonTool`       | `tool/PackageJsonTool/index.js`   | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below.                                                          |
-| `WebinyConfigTool`      | `tool/WebinyConfigTool/index.js`  | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if file not found), `save(file): void`. The returned file exposes `file.imports` and `file.jsx` sub-objects. See **WebinyConfigFile API** below.                                                                                      |
-| `DependencyGuard`       | `tool/DependencyGuard/index.js`   | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches).                                      |
-| `UpgradeHistory`        | `tool/UpgradeHistory/index.js`    | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. The handler records each step and skips already-executed upgrades.                                                                           |
-| `Responder`             | `base/Responder/index.js`         | `success(duration: number, message?: string): never` / `error(message: string, duration: number, error?: Error): never` — terminates the process via `logger.done()` / `logger.fatal()` + `process.exit`. Injectable; `ProcessResponder` is the real implementation.                                                             |
+| Abstraction             | Location                          | What it does                                                                                                                                                                                                                                                                                                                                |
+| ----------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Context`               | `base/Context/index.js`           | `cwd`, `registry`, `inputVersion`, `targetVersion`, `installedVersion` (read-once from disk), `currentVersion` (advances after each upgrade step), `setCurrentVersion()`, `resolve()`                                                                                                                                                       |
+| `Logger`                | `base/Logger/index.js`            | `debug`, `info`, `warn`, `error`, `fatal`, `done` — standard pino levels + `done` (emits `info` with `{ _done: true }` metadata; JSON transport maps it to `type: "done"`)                                                                                                                                                                  |
+| `PackageJsonService`    | `service/PackageJson/index.js`    | `load(target: string): PackageJsonFile \| null`, `loadOrThrow(target: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void` — low-level load/save for any `package.json` path. See **PackageJsonFile API** below.                                                                    |
+| `PackageManagerService` | `service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — higher-level wrapper; `name()` returns the detected package manager for the project. Auto-detected from lock file (yarn.lock → pnpm-lock.yaml → package-lock.json); override with `--package-manager`                                                                       |
+| `RegistryService`       | `service/Registry/index.js`       | `getLatestVersion(name: string): Promise<Version \| null>` — resolves `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version.                                                                                                                                    |
+| `Git`                   | `service/Git/index.js`            | `isClean()`, `restore()` — used by handler to check for a clean repo and roll back on failure; skips gracefully if cwd is not a git repo                                                                                                                                                                                                    |
+| `UpWebiny`              | `tool/UpWebiny/index.js`          | Consolidates all `@webiny/*` packages and bare `webiny` into `dependencies` at the target version (removes from devDependencies/peerDependencies if present); takes `{ version }` only — sync method, called by the handler after all upgrade steps to pin the final target version. Upgrades must **not** call this themselves.            |
+| `PackageJsonTool`       | `tool/PackageJsonTool/index.js`   | Higher-level package.json ops scoped to `cwd`. `load(target?: string): PackageJsonFile \| null`, `loadOrThrow(target?: string): PackageJsonFile` (throws on failure — **prefer this over `load` + null guard**), `save(file): void`. See **PackageJsonFile API** below.                                                                     |
+| `WebinyConfigTool`      | `tool/WebinyConfigTool/index.js`  | Reads and mutates `webiny.config.tsx` via ts-morph AST. `read(): WebinyConfigFile` (throws if file not found), `save(file): void`. The returned file exposes `file.imports` and `file.jsx` sub-objects. See **WebinyConfigFile API** below.                                                                                                 |
+| `DependencyGuard`       | `tool/DependencyGuard/index.js`   | `execute(): Mismatch[]` — reads `node_modules/@webiny/cli/files/references.json` (synchronous), compares against user's `package.json` (all four sections), strips ranges, returns `Mismatch[]` where each entry is `{ name, userVersion, expectedVersion }` (empty array = no mismatches).                                                 |
+| `YarnrcGuard`           | `tool/YarnrcGuard/index.js`       | `execute({ targetVersion, breakOnVersion }): void` — reads `.yarnrc.yml` from `cwd`, checks four required security settings (`approvedGitRepositories`, `enableScripts`, `npmMinimalAgeGate`, `npmPreapprovedPackages`). Logs info when `targetVersion < breakOnVersion`; throws `YarnrcGuardError` when `targetVersion >= breakOnVersion`. |
+| `UpgradeHistory`        | `tool/UpgradeHistory/index.js`    | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. The handler records each step and skips already-executed upgrades.                                                                                      |
+| `Responder`             | `base/Responder/index.js`         | `success(duration: number, message?: string): never` / `error(message: string, duration: number, error?: Error): never` — terminates the process via `logger.done()` / `logger.fatal()` + `process.exit`. Injectable; `ProcessResponder` is the real implementation.                                                                        |
 
 ### WebinyConfigFile API
 

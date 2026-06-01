@@ -178,3 +178,4 @@ The runner will automatically discover and execute the script when `6.2.0` is pa
 | [UpWebiny](src/tool/UpWebiny/README.md)                 | Pins all `@webiny/*` packages to a target version and normalises placement. |
 | [UpgradeHistory](src/tool/UpgradeHistory/README.md)     | Persists and queries the upgrade history inside `package.json`.             |
 | [WebinyConfigTool](src/tool/WebinyConfigTool/README.md) | Reads and mutates `webiny.config.tsx` via ts-morph AST.                     |
+| [YarnrcGuard](src/tool/YarnrcGuard/README.md)           | Enforces required `.yarnrc.yml` security settings before upgrading.         |
