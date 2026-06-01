@@ -7,9 +7,11 @@ import { Responder } from "../Responder/abstraction.js";
 import { Logger } from "../Logger/abstraction.js";
 import { Context } from "../Context/abstraction.js";
 import { DependencyGuard } from "../../tool/DependencyGuard/abstraction.js";
+import { YarnrcGuard } from "../../tool/YarnrcGuard/abstraction.js";
 import { Input } from "../Input/abstraction.js";
 import { Version } from "../Version/index.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
+import { YarnrcGuardError } from "../../tool/YarnrcGuard/index.js";
 
 const createMockContext = (installed = "6.0.0", target = "6.1.0"): Context.Interface => ({
     cwd: "/project",
@@ -33,6 +35,11 @@ const createContainer = (ctx: Context.Interface = createMockContext()) => {
     };
     container.registerInstance(DependencyGuard, dependencyGuard);
 
+    const yarnrcGuard: YarnrcGuard.Interface = {
+        execute: vi.fn()
+    };
+    container.registerInstance(YarnrcGuard, yarnrcGuard);
+
     const runner: UpgradeRunner.Interface = {
         run: vi.fn().mockResolvedValue(undefined)
     };
@@ -51,7 +58,7 @@ const createContainer = (ctx: Context.Interface = createMockContext()) => {
 
     container.register(Application);
 
-    return { container, logger, dependencyGuard, runner, responder };
+    return { container, logger, dependencyGuard, yarnrcGuard, runner, responder };
 };
 
 describe("Application.execute", () => {
@@ -139,5 +146,46 @@ describe("Application.execute", () => {
 
         const warningCalls = vi.mocked(logger.warn).mock.calls.map(c => c[0]);
         expect(warningCalls.some(msg => msg.includes("@webiny/app"))).toBe(true);
+    });
+
+    it("calls yarnrcGuard.execute before runner.run", async () => {
+        const callOrder: string[] = [];
+        const { container, yarnrcGuard, runner } = createContainer();
+        vi.mocked(yarnrcGuard.execute).mockImplementation(() => {
+            callOrder.push("yarnrcGuard");
+        });
+        vi.mocked(runner.run).mockImplementation(async () => {
+            callOrder.push("runner");
+        });
+        const app = container.resolve(ApplicationToken);
+
+        await app.execute();
+
+        expect(callOrder).toEqual(["yarnrcGuard", "runner"]);
+    });
+
+    it("calls responder.error when yarnrcGuard throws", async () => {
+        const { container, yarnrcGuard, runner, responder } = createContainer();
+        vi.mocked(yarnrcGuard.execute).mockImplementation(() => {
+            throw new YarnrcGuardError(["enableScripts"]);
+        });
+        const app = container.resolve(ApplicationToken);
+
+        await app.execute();
+
+        expect(runner.run).not.toHaveBeenCalled();
+        expect(responder.error).toHaveBeenCalledOnce();
+        const [message] = vi.mocked(responder.error).mock.calls[0];
+        expect(message).toContain("enableScripts");
+    });
+
+    it("does not call yarnrcGuard when target equals installed and forceUpgrade is false", async () => {
+        const ctx = createMockContext("6.1.0", "6.1.0");
+        const { container, yarnrcGuard } = createContainer(ctx);
+        const app = container.resolve(ApplicationToken);
+
+        await app.execute();
+
+        expect(yarnrcGuard.execute).not.toHaveBeenCalled();
     });
 });
