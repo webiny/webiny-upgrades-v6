@@ -6,6 +6,7 @@ export default {
       "@types/node",
       "@types/semver",
       "@types/yargs",
+      "@types/js-yaml",
       "@vitest/coverage-v8",
       "adio",
       "oxfmt",

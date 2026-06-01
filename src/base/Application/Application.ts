@@ -2,14 +2,17 @@ import { Application as ApplicationAbstraction } from "./abstraction.js";
 import { UpgradeRunner } from "../../service/UpgradeRunner/index.js";
 import { Responder } from "../Responder/index.js";
 import { DependencyGuard } from "../../tool/DependencyGuard/index.js";
+import { YarnrcGuard } from "../../tool/YarnrcGuard/index.js";
 import { Logger } from "../Logger/index.js";
 import { Context } from "../Context/index.js";
 import { Input } from "../Input/index.js";
+import { Version } from "../Version/index.js";
 
 class ApplicationImpl implements ApplicationAbstraction.Interface {
     public constructor(
         private readonly logger: Logger.Interface,
         private readonly dependencyGuard: DependencyGuard.Interface,
+        private readonly yarnrcGuard: YarnrcGuard.Interface,
         private readonly runner: UpgradeRunner.Interface,
         private readonly responder: Responder.Interface,
         private readonly context: Context.Interface,
@@ -33,6 +36,11 @@ class ApplicationImpl implements ApplicationAbstraction.Interface {
             return;
         }
         try {
+            this.yarnrcGuard.execute({
+                targetVersion: this.context.targetVersion,
+                breakOnVersion: Version.create("6.5.0")
+            });
+
             await this.runner.run();
             const duration = (Date.now() - start) / 1000;
             this.runDependencyGuard("Running dependency guard...");
@@ -61,5 +69,5 @@ class ApplicationImpl implements ApplicationAbstraction.Interface {
 
 export const Application = ApplicationAbstraction.createImplementation({
     implementation: ApplicationImpl,
-    dependencies: [Logger, DependencyGuard, UpgradeRunner, Responder, Context, Input]
+    dependencies: [Logger, DependencyGuard, YarnrcGuard, UpgradeRunner, Responder, Context, Input]
 });

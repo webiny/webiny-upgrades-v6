@@ -17,6 +17,7 @@ import { UpWebinyFeature } from "./tool/UpWebiny/index.js";
 import { PackageJsonToolFeature } from "./tool/PackageJsonTool/index.js";
 import { WebinyConfigToolFeature } from "./tool/WebinyConfigTool/index.js";
 import { DependencyGuardFeature } from "./tool/DependencyGuard/index.js";
+import { YarnrcGuardFeature } from "./tool/YarnrcGuard/index.js";
 import { UpgradeHistoryFeature } from "./tool/UpgradeHistory/index.js";
 import { UpgradeHandlerFeature } from "./service/UpgradeHandler/index.js";
 import { UpgradeRunnerFeature } from "./service/UpgradeRunner/index.js";
@@ -161,6 +162,7 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     PackageJsonToolFeature.register(container);
     WebinyConfigToolFeature.register(container);
     DependencyGuardFeature.register(container);
+    YarnrcGuardFeature.register(container);
     UpgradeHistoryFeature.register(container);
 
     /**

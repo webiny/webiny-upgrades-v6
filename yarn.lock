@@ -864,6 +864,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/js-yaml@npm:^4.0.9":
+  version: 4.0.9
+  resolution: "@types/js-yaml@npm:4.0.9"
+  checksum: 10/a0ce595db8a987904badd21fc50f9f444cb73069f4b95a76cc222e0a17b3ff180669059c763ec314bc4c3ce284379177a9da80e83c5f650c6c1310cafbfaa8e6
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^24.12.4":
   version: 24.12.4
   resolution: "@types/node@npm:24.12.4"
@@ -1613,7 +1620,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:^4.1.0":
+"js-yaml@npm:4.1.1, js-yaml@npm:^4.1.0":
   version: 4.1.1
   resolution: "js-yaml@npm:4.1.1"
   dependencies:
@@ -2796,6 +2803,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "webiny-upgrades-v6@workspace:."
   dependencies:
+    "@types/js-yaml": "npm:^4.0.9"
     "@types/node": "npm:^24.12.4"
     "@types/semver": "npm:^7.7.1"
     "@types/yargs": "npm:^17.0.35"
@@ -2803,6 +2811,7 @@ __metadata:
     "@webiny/di": "npm:^1.0.1"
     adio: "npm:^3.0.0"
     execa: "npm:^9.6.1"
+    js-yaml: "npm:4.1.1"
     load-json-file: "npm:^7.0.1"
     oxfmt: "npm:^0.52.0"
     oxlint: "npm:^1.67.0"
