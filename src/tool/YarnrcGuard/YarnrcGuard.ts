@@ -30,14 +30,14 @@ class YarnrcGuardImpl implements YarnrcGuardAbstraction.Interface {
             throw new YarnrcGuardError(missing);
         }
 
-        this.logger.info("The following .yarnrc.yml security settings are not configured:");
+        this.logger.warn("The following .yarnrc.yml security settings are not configured:");
         for (const setting of missing) {
-            this.logger.info(`  - ${setting}`);
+            this.logger.warn(`  - ${setting}`);
         }
-        this.logger.info(
+        this.logger.warn(
             `Starting with version ${breakOnVersion.raw}, these settings will be required to upgrade.`
         );
-        this.logger.info(
+        this.logger.warn(
             "See https://www.webiny.com/docs/infrastructure/yarnrc-security.md for details."
         );
     }

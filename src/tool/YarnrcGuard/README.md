@@ -36,7 +36,7 @@ guard.execute({
 | Condition                                           | Result                                                 |
 | --------------------------------------------------- | ------------------------------------------------------ |
 | All four settings present                           | Returns silently                                       |
-| Missing settings, `targetVersion < breakOnVersion`  | Logs each missing setting via `logger.info`            |
+| Missing settings, `targetVersion < breakOnVersion`  | Logs each missing setting via `logger.warn`            |
 | Missing settings, `targetVersion >= breakOnVersion` | Throws `YarnrcGuardError` listing all missing settings |
 | `.yarnrc.yml` does not exist                        | Treated as all four settings missing                   |
 | `.yarnrc.yml` is empty or not a valid YAML object   | Treated as all four settings missing                   |

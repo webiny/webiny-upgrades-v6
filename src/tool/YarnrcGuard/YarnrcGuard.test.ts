@@ -71,7 +71,7 @@ describe("YarnrcGuard", () => {
         expect(() => guard.execute(params("6.4.0", "6.5.0"))).not.toThrow();
     });
 
-    it("logs info when settings are missing and target is below break version", () => {
+    it("logs warnings when settings are missing and target is below break version", () => {
         vi.mocked(fs.existsSync).mockReturnValue(true);
         vi.mocked(fs.readFileSync).mockReturnValue(PARTIAL_YARNRC);
         const { container, logger } = createContainer();
@@ -79,10 +79,10 @@ describe("YarnrcGuard", () => {
 
         guard.execute(params("6.4.0", "6.5.0"));
 
-        const infoCalls = vi.mocked(logger.info).mock.calls.map(c => c[0]);
-        expect(infoCalls.some(msg => msg.includes("approvedGitRepositories"))).toBe(true);
-        expect(infoCalls.some(msg => msg.includes("npmPreapprovedPackages"))).toBe(true);
-        expect(infoCalls.some(msg => msg.includes("6.5.0"))).toBe(true);
+        const warnCalls = vi.mocked(logger.warn).mock.calls.map(c => c[0]);
+        expect(warnCalls.some(msg => msg.includes("approvedGitRepositories"))).toBe(true);
+        expect(warnCalls.some(msg => msg.includes("npmPreapprovedPackages"))).toBe(true);
+        expect(warnCalls.some(msg => msg.includes("6.5.0"))).toBe(true);
     });
 
     it("does not log missing settings that are present", () => {
@@ -93,9 +93,9 @@ describe("YarnrcGuard", () => {
 
         guard.execute(params("6.4.0", "6.5.0"));
 
-        const infoCalls = vi.mocked(logger.info).mock.calls.map(c => c[0]);
-        expect(infoCalls.some(msg => msg.includes("enableScripts"))).toBe(false);
-        expect(infoCalls.some(msg => msg.includes("npmMinimalAgeGate"))).toBe(false);
+        const warnCalls = vi.mocked(logger.warn).mock.calls.map(c => c[0]);
+        expect(warnCalls.some(msg => msg.includes("enableScripts"))).toBe(false);
+        expect(warnCalls.some(msg => msg.includes("npmMinimalAgeGate"))).toBe(false);
     });
 
     it("throws YarnrcGuardError when settings are missing and target >= break version", () => {
@@ -140,11 +140,11 @@ describe("YarnrcGuard", () => {
 
         guard.execute(params("6.4.0", "6.5.0"));
 
-        const infoCalls = vi.mocked(logger.info).mock.calls.map(c => c[0]);
-        expect(infoCalls.some(msg => msg.includes("approvedGitRepositories"))).toBe(true);
-        expect(infoCalls.some(msg => msg.includes("enableScripts"))).toBe(true);
-        expect(infoCalls.some(msg => msg.includes("npmMinimalAgeGate"))).toBe(true);
-        expect(infoCalls.some(msg => msg.includes("npmPreapprovedPackages"))).toBe(true);
+        const warnCalls = vi.mocked(logger.warn).mock.calls.map(c => c[0]);
+        expect(warnCalls.some(msg => msg.includes("approvedGitRepositories"))).toBe(true);
+        expect(warnCalls.some(msg => msg.includes("enableScripts"))).toBe(true);
+        expect(warnCalls.some(msg => msg.includes("npmMinimalAgeGate"))).toBe(true);
+        expect(warnCalls.some(msg => msg.includes("npmPreapprovedPackages"))).toBe(true);
     });
 
     it("treats empty .yarnrc.yml as all settings missing", () => {
