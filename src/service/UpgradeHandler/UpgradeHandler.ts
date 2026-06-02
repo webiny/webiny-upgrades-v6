@@ -62,28 +62,27 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
             this.logger.info(
                 `No upgrades found that can handle version ${params.version.format()}.`
             );
-            return;
-        }
+        } else {
+            const versions = pool.map(u => u.version.format()).join(", ");
+            this.logger.debug(`Found ${pool.length} upgrade(s) to execute: ${versions}`);
 
-        const versions = pool.map(u => u.version.format()).join(", ");
-        this.logger.debug(`Found ${pool.length} upgrade(s) to execute: ${versions}`);
-
-        if (this.input.dryRun) {
-            return;
-        }
-        try {
-            for (const upgrade of pool) {
-                this.logger.debug(`Running upgrade ${upgrade.version.format()}...`);
-                await upgrade.execute();
-                if (!this.upgradeHistory.get(upgrade.version)) {
-                    this.upgradeHistory.add(upgrade.version);
-                }
-                this.context.setCurrentVersion(upgrade.version);
+            if (this.input.dryRun) {
+                return;
             }
-        } catch (error) {
-            this.logger.error("Upgrade failed, reverting changes...");
-            await this.git.restore();
-            throw error;
+            try {
+                for (const upgrade of pool) {
+                    this.logger.debug(`Running upgrade ${upgrade.version.format()}...`);
+                    await upgrade.execute();
+                    if (!this.upgradeHistory.get(upgrade.version)) {
+                        this.upgradeHistory.add(upgrade.version);
+                    }
+                    this.context.setCurrentVersion(upgrade.version);
+                }
+            } catch (error) {
+                this.logger.error("Upgrade failed, reverting changes...");
+                await this.git.restore();
+                throw error;
+            }
         }
 
         const installVersion = this.input.installVersion
@@ -91,6 +90,10 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
             : params.version;
         this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
+
+        if (!this.upgradeHistory.get(params.version)) {
+            this.upgradeHistory.add(params.version);
+        }
     }
 }
 

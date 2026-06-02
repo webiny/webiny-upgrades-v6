@@ -211,15 +211,21 @@ describe("UpgradeHandler", () => {
             expect(fixUpgrade.execute).toHaveBeenCalledOnce();
         });
 
-        it("returns early and logs when pool is empty", async () => {
+        it("logs when pool is empty but still bumps versions, installs, and records history", async () => {
             const ctx = createMockContext("6.0.0", "6.1.0");
             const container = createContainer([], ctx);
             const logger = container.resolve(Logger);
+            const upWebiny = container.resolve(UpWebiny);
+            const packageManager = container.resolve(PackageManagerService);
+            const history = container.resolve(UpgradeHistory);
             const handler = container.resolve(UpgradeHandlerToken);
 
             await handler.handle({ version: v("6.1.0") });
 
             expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("No upgrades found"));
+            expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.1.0") });
+            expect(packageManager.install).toHaveBeenCalledOnce();
+            expect(history.add).toHaveBeenCalledWith(v("6.1.0"));
         });
     });
 
@@ -377,6 +383,37 @@ describe("UpgradeHandler", () => {
             await handler.handle({ version: v("6.2.0") });
 
             expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.2.0") });
+        });
+
+        it("records target version in history after successful upgrade", async () => {
+            const upgrade = createMockUpgrade("6.1.0");
+            const ctx = createMockContext("6.0.0", "6.2.0");
+            const container = createContainer([upgrade], ctx);
+            const history = container.resolve(UpgradeHistory);
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.2.0") });
+
+            expect(history.add).toHaveBeenCalledWith(v("6.1.0"));
+            expect(history.add).toHaveBeenCalledWith(v("6.2.0"));
+        });
+
+        it("does not duplicate target version history entry if already present", async () => {
+            const upgrade = createMockUpgrade("6.1.0");
+            const ctx = createMockContext("6.0.0", "6.1.0");
+            const container = createContainer([upgrade], ctx);
+            const history = container.resolve(UpgradeHistory);
+            vi.mocked(history.get).mockImplementation(version => {
+                if (version.raw === "6.1.0") {
+                    return { version: "6.1.0", timestamp: "2026-06-01T10:00:00.000Z" };
+                }
+                return null;
+            });
+            const handler = container.resolve(UpgradeHandlerToken);
+
+            await handler.handle({ version: v("6.1.0") });
+
+            expect(history.add).not.toHaveBeenCalled();
         });
     });
 });

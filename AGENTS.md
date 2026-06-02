@@ -64,12 +64,13 @@ Application.execute()
   │    └─ UpgradeHandler.handle()
   │         ├─ git.isClean() — aborts if repo is dirty
   │         ├─ collects upgrades whose canHandle() returns true and not in history
-  │         ├─ if dryRun: returns early (no changes)
-  │         ├─ calls execute() on each in semver order
+  │         ├─ if pool non-empty and dryRun: returns early (no changes)
+  │         ├─ if pool non-empty: calls execute() on each in semver order
   │         ├─ records each step in upgrade history (package.json webiny.history)
   │         ├─ on failure: git.restore() + rethrow
-  │         ├─ on success: upWebiny.execute(installVersion or targetVersion) to pin final versions
-  │         └─ packageManager.install() (changes left unstaged — no commit)
+  │         ├─ upWebiny.execute(installVersion or targetVersion) to pin final versions (always runs)
+  │         ├─ packageManager.install() (always runs — changes left unstaged — no commit)
+  │         └─ records target version in upgrade history (always, deduped)
   └─ runDependencyGuard() — logs warnings if mismatches found
 ```
 
