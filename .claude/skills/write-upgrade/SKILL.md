@@ -90,6 +90,7 @@ Declare these in the `dependencies` array of `createImplementation`. They are re
 | `YarnrcGuard` | `../../tool/YarnrcGuard/index.js` | `execute({ targetVersion, breakOnVersion }): void` — reads `.yarnrc.yml` from `cwd`, checks four required security settings (`approvedGitRepositories`, `enableScripts`, `npmMinimalAgeGate`, `npmPreapprovedPackages`). Logs info when `targetVersion < breakOnVersion`; throws `YarnrcGuardError` when `>= breakOnVersion`. Not typically used in upgrade scripts — runs automatically in the Application layer before upgrades. |
 | `UpgradeHistory` | `../../tool/UpgradeHistory/index.js` | `add(version)`, `remove(version)`, `get(version): Entry \| null`, `list(): Entry[]` — reads/writes `webiny.history` array in package.json. Each entry has `{ version, timestamp }`. Managed by the handler automatically. |
 | `PackageManagerService` | `../../service/PackageManager/index.js` | `install()`, `version()`, `name(): "yarn" \| "pnpm" \| "npm"` — use `name()` to branch on the user's package manager without touching the filesystem directly. |
+| `ReferencesService` | `../../service/References/index.js` | `getReference(name): IReference \| null`, `getVersion(name): string \| null` — looks up canonical package versions from `references.json`. |
 | `RegistryService` | `../../service/Registry/index.js` | `getLatestVersion(name: string): Promise<Version \| null>` — resolves the current `latest` dist-tag. `getVersion(name: string, version: string \| Version): Promise<Version \| null>` — resolves a specific version. |
 
 ### WebinyConfigFile API

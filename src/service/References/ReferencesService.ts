@@ -14,13 +14,11 @@ interface IReferenceFile {
 }
 
 class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
-    private cache: IReference[] | undefined;
-
     public constructor(private readonly context: Context.Interface) {}
 
     public getReference(name: string): IReference | null {
         return (
-            this.getCache().find(ref => {
+            this.load().find(ref => {
                 return ref.name === name;
             }) || null
         );
@@ -34,10 +32,7 @@ class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
         return ref.versions[0].version || null;
     }
 
-    private getCache(): IReference[] {
-        if (this.cache) {
-            return this.cache;
-        }
+    private load(): IReference[] {
         const filePath = this.context.resolve(...REFERENCES_FILE_SEGMENTS);
         let raw: IReferenceFile;
         try {
@@ -48,8 +43,7 @@ class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
         if (!raw?.references?.length) {
             throw new ReferencesFileInvalidError(filePath);
         }
-        this.cache = raw.references;
-        return this.cache;
+        return raw.references;
     }
 }
 

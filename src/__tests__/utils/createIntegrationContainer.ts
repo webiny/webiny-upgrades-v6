@@ -5,6 +5,7 @@ import { Context } from "../../base/Context/abstraction.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { Git } from "../../service/Git/abstraction.js";
 import { PackageManagerService } from "../../service/PackageManager/abstraction.js";
+import { ReferencesService } from "../../service/References/abstractions.js";
 import { UpWebiny } from "../../tool/UpWebiny/abstraction.js";
 import { Input } from "../../base/Input/abstraction.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/abstraction.js";
@@ -62,9 +63,16 @@ export const createIntegrationContainer = ({
     container.registerInstance(PackageManagerService, yarn);
 
     const upWebiny: UpWebiny.Interface = {
-        execute: vi.fn().mockResolvedValue(undefined)
+        execute: vi.fn().mockResolvedValue(undefined),
+        reconcile: vi.fn()
     };
     container.registerInstance(UpWebiny, upWebiny);
+
+    container.registerInstance(ReferencesService, {
+        getReference: vi.fn().mockReturnValue(null),
+        getVersion: vi.fn().mockReturnValue(null)
+    });
+
     container.registerInstance(Input, {
         dryRun: false
     } as Input.Interface);

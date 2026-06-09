@@ -6,8 +6,8 @@ Pins all `@webiny/*` packages in a project's `package.json` to a given target ve
 
 | Export               | Kind              | Description                                                         |
 | -------------------- | ----------------- | ------------------------------------------------------------------- |
-| `UpWebiny`           | abstraction token | DI token for the tool; resolved to call `execute`.                  |
-| `UpWebiny.Interface` | type              | `{ execute(params: Params): void }`                                 |
+| `UpWebiny`           | abstraction token | DI token for the tool; resolved to call `execute` / `reconcile`.    |
+| `UpWebiny.Interface` | type              | `{ execute(params: Params): void; reconcile(): void }`              |
 | `UpWebiny.Params`    | type              | `{ version: Version }` — the target version to pin all packages to. |
 | `UpWebinyFeature`    | feature           | Registers the concrete `UpWebinyImpl` against the `UpWebiny` token. |
 
@@ -25,4 +25,6 @@ upWebiny.execute({ version: Version.create("6.1.0") });
 // All @webiny/* packages are now pinned to 6.1.0 in dependencies
 ```
 
-Packages skipped: `@webiny/di` (internal DI library, not versioned with Webiny releases).
+## Skipped packages
+
+`@webiny/di`, `@webiny/stdlib`, and `@webiny/wts-client` are independently versioned and excluded from `execute()`. After install, call `reconcile()` to pin them to the versions specified in `references.json` (via `ReferencesService`).

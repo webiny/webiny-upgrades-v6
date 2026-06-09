@@ -70,16 +70,6 @@ describe("ReferencesService", () => {
         });
     });
 
-    describe("cache", () => {
-        it("loads the file only once across multiple calls", () => {
-            mockReferences([{ name: "@webiny/cli", versions: [{ version: "6.1.0", files: [] }] }]);
-            const service = createContainer().resolve(ReferencesService);
-            service.getReference("@webiny/cli");
-            service.getReference("@webiny/cli");
-            expect(loadJsonFileSync).toHaveBeenCalledTimes(1);
-        });
-    });
-
     describe("error handling", () => {
         it("throws ReferencesFileMissingError when references.json cannot be loaded", () => {
             (loadJsonFileSync as any).mockImplementation(() => {

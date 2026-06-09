@@ -91,6 +91,9 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
         this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
 
+        this.upWebiny.reconcile();
+        await this.packageManagerService.install();
+
         if (!this.upgradeHistory.get(params.version)) {
             this.upgradeHistory.add(params.version);
         }
