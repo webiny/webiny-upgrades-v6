@@ -78,6 +78,18 @@ describe("ReferencesService", () => {
             service.getReference("@webiny/cli");
             expect(loadJsonFileSync).toHaveBeenCalledTimes(1);
         });
+
+        it("re-reads the file after clearCache is called", () => {
+            mockReferences([{ name: "@webiny/cli", versions: [{ version: "6.1.0", files: [] }] }]);
+            const service = createContainer().resolve(ReferencesService);
+            service.getReference("@webiny/cli");
+            expect(loadJsonFileSync).toHaveBeenCalledTimes(1);
+
+            mockReferences([{ name: "@webiny/cli", versions: [{ version: "6.2.0", files: [] }] }]);
+            service.clearCache();
+            expect(service.getVersion("@webiny/cli")).toBe("6.2.0");
+            expect(loadJsonFileSync).toHaveBeenCalledTimes(2);
+        });
     });
 
     describe("error handling", () => {

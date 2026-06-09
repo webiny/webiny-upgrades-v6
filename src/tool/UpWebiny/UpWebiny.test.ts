@@ -3,6 +3,7 @@ import { Container } from "@webiny/di";
 import { UpWebiny as UpWebinyImpl } from "./UpWebiny.js";
 import { UpWebiny } from "./abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { ReferencesService } from "../../service/References/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import { Version } from "../../base/Version/index.js";
@@ -10,7 +11,18 @@ import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 
 const v = (version: string) => Version.create(version);
 
-const createContainer = (file: PackageJsonFile.Interface | null = createMockPackageJsonFile()) => {
+const createMockReferencesService = (
+    versions: Record<string, string> = {}
+): ReferencesService.Interface => ({
+    getReference: vi.fn().mockReturnValue(null),
+    getVersion: vi.fn().mockImplementation((name: string) => versions[name] ?? null),
+    clearCache: vi.fn()
+});
+
+const createContainer = (
+    file: PackageJsonFile.Interface | null = createMockPackageJsonFile(),
+    referencesService: ReferencesService.Interface = createMockReferencesService()
+) => {
     const container = new Container();
     container.registerInstance(PackageJsonTool, {
         load: vi.fn().mockReturnValue(file),
@@ -22,6 +34,7 @@ const createContainer = (file: PackageJsonFile.Interface | null = createMockPack
         }),
         save: vi.fn()
     });
+    container.registerInstance(ReferencesService, referencesService);
     container.register(UpWebinyImpl);
     return container;
 };
@@ -134,6 +147,97 @@ describe("UpWebiny", () => {
             const tool = container.resolve(UpWebiny);
             tool.execute({ version: v("6.1.0") });
             expect(packageJsonTool.save).toHaveBeenCalledWith(file);
+        });
+    });
+
+    describe("reconcile", () => {
+        it("pins doNotUpgrade packages to their references.json versions", () => {
+            const file = createMockPackageJsonFile({
+                dependencies: {
+                    "@webiny/di": "1.0.2",
+                    "@webiny/stdlib": "0.0.4",
+                    "@webiny/wts-client": "1.0.0"
+                }
+            });
+            const refs = createMockReferencesService({
+                "@webiny/di": "2.0.0",
+                "@webiny/stdlib": "1.0.0",
+                "@webiny/wts-client": "2.0.0"
+            });
+            const container = createContainer(file, refs);
+            const tool = container.resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(file.getDependency("@webiny/di")).toBe("2.0.0");
+            expect(file.getDependency("@webiny/stdlib")).toBe("1.0.0");
+            expect(file.getDependency("@webiny/wts-client")).toBe("2.0.0");
+        });
+
+        it("saves package.json when changes are made", () => {
+            const file = createMockPackageJsonFile({
+                dependencies: { "@webiny/di": "1.0.2" }
+            });
+            const refs = createMockReferencesService({ "@webiny/di": "2.0.0" });
+            const container = createContainer(file, refs);
+            const packageJsonTool = container.resolve(PackageJsonTool);
+            const tool = container.resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(packageJsonTool.save).toHaveBeenCalledWith(file);
+        });
+
+        it("does not save when no doNotUpgrade packages are present", () => {
+            const file = createMockPackageJsonFile({
+                dependencies: { "@webiny/cli": "6.1.0" }
+            });
+            const refs = createMockReferencesService({ "@webiny/di": "2.0.0" });
+            const container = createContainer(file, refs);
+            const packageJsonTool = container.resolve(PackageJsonTool);
+            const tool = container.resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(packageJsonTool.save).not.toHaveBeenCalled();
+        });
+
+        it("skips packages not found in references.json", () => {
+            const file = createMockPackageJsonFile({
+                dependencies: { "@webiny/di": "1.0.2", "@webiny/stdlib": "0.0.4" }
+            });
+            const refs = createMockReferencesService({ "@webiny/di": "2.0.0" });
+            const container = createContainer(file, refs);
+            const tool = container.resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(file.getDependency("@webiny/di")).toBe("2.0.0");
+            expect(file.getDependency("@webiny/stdlib")).toBe("0.0.4");
+        });
+
+        it("reconciles packages in devDependencies", () => {
+            const file = createMockPackageJsonFile({
+                devDependencies: { "@webiny/di": "1.0.2" }
+            });
+            const refs = createMockReferencesService({ "@webiny/di": "2.0.0" });
+            const tool = createContainer(file, refs).resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(file.getDevDependency("@webiny/di")).toBe("2.0.0");
+        });
+
+        it("reconciles packages in resolutions", () => {
+            const file = createMockPackageJsonFile({
+                resolutions: { "@webiny/stdlib": "0.0.4" }
+            });
+            const refs = createMockReferencesService({ "@webiny/stdlib": "1.0.0" });
+            const tool = createContainer(file, refs).resolve(UpWebiny);
+
+            tool.reconcile();
+
+            expect(file.getResolution("@webiny/stdlib")).toBe("1.0.0");
         });
     });
 });

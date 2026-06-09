@@ -16,6 +16,10 @@ Reads the `references.json` file bundled with `@webiny/cli` to expose the canoni
 | `ReferencesFileMissingError`             | error             | Thrown when `references.json` cannot be found on disk.                              |
 | `ReferencesFileInvalidError`             | error             | Thrown when `references.json` cannot be parsed as valid JSON.                       |
 
+### clearCache
+
+Call `clearCache()` to discard the in-memory copy of `references.json` so the next `getReference` / `getVersion` call re-reads the file from disk. This is needed after `packageManager.install()` updates `node_modules`.
+
 ## Usage
 
 ```ts

@@ -36,7 +36,8 @@ export const registerUpgradeDeps = (
     });
     container.registerInstance(ReferencesService, {
         getReference: vi.fn().mockReturnValue(null),
-        getVersion: vi.fn().mockReturnValue(null)
+        getVersion: vi.fn().mockReturnValue(null),
+        clearCache: vi.fn()
     });
     container.registerInstance(PackageManagerService, {
         install: vi.fn().mockResolvedValue(undefined),

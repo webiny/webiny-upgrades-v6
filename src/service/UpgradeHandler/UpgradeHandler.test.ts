@@ -12,6 +12,7 @@ import { PackageManagerService } from "../PackageManager/abstraction.js";
 import { UpWebiny } from "../../tool/UpWebiny/abstraction.js";
 import { Input } from "../../base/Input/abstraction.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/abstraction.js";
+import { ReferencesService } from "../../service/References/abstractions.js";
 import { Version } from "../../base/Version/index.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
@@ -55,7 +56,14 @@ const createMockGit = (isCleanResult = true): Git.Interface => ({
 });
 
 const createMockUpWebiny = (): UpWebiny.Interface => ({
-    execute: vi.fn().mockResolvedValue(undefined)
+    execute: vi.fn().mockResolvedValue(undefined),
+    reconcile: vi.fn()
+});
+
+const createMockReferencesService = (): ReferencesService.Interface => ({
+    getReference: vi.fn().mockReturnValue(null),
+    getVersion: vi.fn().mockReturnValue(null),
+    clearCache: vi.fn()
 });
 
 const createContainer = (
@@ -79,6 +87,7 @@ const createContainer = (
         update: vi.fn().mockResolvedValue(undefined)
     });
     container.registerInstance(UpWebiny, createMockUpWebiny());
+    container.registerInstance(ReferencesService, createMockReferencesService());
     container.registerInstance(Input, {
         dryRun: false
     } as Input.Interface);
@@ -224,7 +233,7 @@ describe("UpgradeHandler", () => {
 
             expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("No upgrades found"));
             expect(upWebiny.execute).toHaveBeenCalledWith({ version: v("6.1.0") });
-            expect(packageManager.install).toHaveBeenCalledOnce();
+            expect(packageManager.install).toHaveBeenCalledTimes(2);
             expect(history.add).toHaveBeenCalledWith(v("6.1.0"));
         });
     });
@@ -310,7 +319,7 @@ describe("UpgradeHandler", () => {
             expect(git.restore).toHaveBeenCalledOnce();
         });
 
-        it("calls packageManager.install on success", async () => {
+        it("calls packageManager.install twice on success", async () => {
             const upgrade = createMockUpgrade("6.1.0");
             const ctx = createMockContext("6.0.0", "6.1.0");
             const container = createContainer([upgrade], ctx);
@@ -319,7 +328,7 @@ describe("UpgradeHandler", () => {
 
             await handler.handle({ version: v("6.1.0") });
 
-            expect(packageManager.install).toHaveBeenCalledOnce();
+            expect(packageManager.install).toHaveBeenCalledTimes(2);
         });
 
         it("does not call git.restore on success", async () => {
@@ -396,6 +405,33 @@ describe("UpgradeHandler", () => {
 
             expect(history.add).toHaveBeenCalledWith(v("6.1.0"));
             expect(history.add).toHaveBeenCalledWith(v("6.2.0"));
+        });
+
+        it("runs reconciliation after first install: clearCache → reconcile → second install", async () => {
+            const order: string[] = [];
+            const upgrade = createMockUpgrade("6.1.0");
+            const ctx = createMockContext("6.0.0", "6.1.0");
+            const container = createContainer([upgrade], ctx);
+
+            const packageManager = container.resolve(PackageManagerService);
+            vi.mocked(packageManager.install).mockImplementation(async () => {
+                order.push("install");
+            });
+
+            const refs = container.resolve(ReferencesService);
+            vi.mocked(refs.clearCache).mockImplementation(() => {
+                order.push("clearCache");
+            });
+
+            const upWebiny = container.resolve(UpWebiny);
+            vi.mocked(upWebiny.reconcile).mockImplementation(() => {
+                order.push("reconcile");
+            });
+
+            const handler = container.resolve(UpgradeHandlerToken);
+            await handler.handle({ version: v("6.1.0") });
+
+            expect(order).toEqual(["install", "clearCache", "reconcile", "install"]);
         });
 
         it("does not duplicate target version history entry if already present", async () => {

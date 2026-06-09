@@ -68,7 +68,7 @@ describe("UpgradeRunner", () => {
 
             await container.resolve(UpgradeRunner).run();
 
-            expect(yarn.install).toHaveBeenCalledOnce();
+            expect(yarn.install).toHaveBeenCalledTimes(2);
         });
     });
 

@@ -25,6 +25,7 @@ export interface IReference {
 interface IReferencesService {
     getReference(name: string): IReference | null;
     getVersion(name: string): string | null;
+    clearCache(): void;
 }
 
 export const ReferencesService = createAbstraction<IReferencesService>("Service/ReferencesService");

@@ -1,7 +1,8 @@
 import { UpWebiny as UpWebinyAbstraction } from "./abstraction.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
+import { ReferencesService } from "../../service/References/index.js";
 
-const doNotUpgrade = ["@webiny/di", "@webiny/stdlib"];
+const doNotUpgrade = ["@webiny/di", "@webiny/stdlib", "@webiny/wts-client"];
 
 const isWebinyUpgradeable = (dep: string): boolean => {
     if (doNotUpgrade.includes(dep)) {
@@ -11,7 +12,10 @@ const isWebinyUpgradeable = (dep: string): boolean => {
 };
 
 class UpWebinyImpl implements UpWebinyAbstraction.Interface {
-    public constructor(private readonly packageJsonTool: PackageJsonTool.Interface) {}
+    public constructor(
+        private readonly packageJsonTool: PackageJsonTool.Interface,
+        private readonly referencesService: ReferencesService.Interface
+    ) {}
 
     public execute(params: UpWebinyAbstraction.Params): void {
         const { version } = params;
@@ -72,9 +76,40 @@ class UpWebinyImpl implements UpWebinyAbstraction.Interface {
 
         this.packageJsonTool.save(packageJson);
     }
+
+    public reconcile(): void {
+        const packageJson = this.packageJsonTool.loadOrThrow();
+        let changed = false;
+
+        for (const name of doNotUpgrade) {
+            const refVersion = this.referencesService.getVersion(name);
+            if (!refVersion) {
+                continue;
+            }
+
+            if (packageJson.getDependency(name)) {
+                packageJson.setDependency(name, refVersion);
+                changed = true;
+            }
+
+            if (packageJson.getDevDependency(name)) {
+                packageJson.setDevDependency(name, refVersion);
+                changed = true;
+            }
+
+            if (packageJson.getResolution(name)) {
+                packageJson.setResolution(name, refVersion);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            this.packageJsonTool.save(packageJson);
+        }
+    }
 }
 
 export const UpWebiny = UpWebinyAbstraction.createImplementation({
     implementation: UpWebinyImpl,
-    dependencies: [PackageJsonTool]
+    dependencies: [PackageJsonTool, ReferencesService]
 });

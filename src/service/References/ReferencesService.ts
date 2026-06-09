@@ -34,6 +34,10 @@ class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
         return ref.versions[0].version || null;
     }
 
+    public clearCache(): void {
+        this.cache = undefined;
+    }
+
     private getCache(): IReference[] {
         if (this.cache) {
             return this.cache;

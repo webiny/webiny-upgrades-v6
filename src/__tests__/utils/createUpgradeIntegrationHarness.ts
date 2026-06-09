@@ -146,7 +146,8 @@ export const createUpgradeIntegrationHarness = async (params: IParams): Promise<
 
     container.registerInstance(ReferencesService, {
         getReference: vi.fn().mockReturnValue(null),
-        getVersion: vi.fn().mockReturnValue(null)
+        getVersion: vi.fn().mockReturnValue(null),
+        clearCache: vi.fn()
     });
 
     container.registerInstance(DependencyGuard, {
