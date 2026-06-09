@@ -15,8 +15,7 @@ const createMockReferencesService = (
     versions: Record<string, string> = {}
 ): ReferencesService.Interface => ({
     getReference: vi.fn().mockReturnValue(null),
-    getVersion: vi.fn().mockImplementation((name: string) => versions[name] ?? null),
-    clearCache: vi.fn()
+    getVersion: vi.fn().mockImplementation((name: string) => versions[name] ?? null)
 });
 
 const createContainer = (

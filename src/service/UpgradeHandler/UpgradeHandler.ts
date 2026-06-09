@@ -8,7 +8,6 @@ import { PackageManagerService } from "../PackageManager/index.js";
 import { UpWebiny } from "../../tool/UpWebiny/index.js";
 import { Input } from "../../base/Input/index.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/index.js";
-import { ReferencesService } from "../../service/References/index.js";
 import { Version } from "../../base/Version/index.js";
 
 class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
@@ -20,8 +19,7 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
         private readonly packageManagerService: PackageManagerService.Interface,
         private readonly upWebiny: UpWebiny.Interface,
         private readonly input: Input.Interface,
-        private readonly upgradeHistory: UpgradeHistory.Interface,
-        private readonly referencesService: ReferencesService.Interface
+        private readonly upgradeHistory: UpgradeHistory.Interface
     ) {}
 
     public async handle(params: UpgradeHandlerAbstraction.Params): Promise<void> {
@@ -93,7 +91,6 @@ class UpgradeHandlerImpl implements UpgradeHandlerAbstraction.Interface {
         this.upWebiny.execute({ version: installVersion });
         await this.packageManagerService.install();
 
-        this.referencesService.clearCache();
         this.upWebiny.reconcile();
         await this.packageManagerService.install();
 
@@ -113,7 +110,6 @@ export const UpgradeHandler = UpgradeHandlerAbstraction.createImplementation({
         PackageManagerService,
         UpWebiny,
         Input,
-        UpgradeHistory,
-        ReferencesService
+        UpgradeHistory
     ]
 });

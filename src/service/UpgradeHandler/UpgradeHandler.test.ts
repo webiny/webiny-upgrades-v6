@@ -12,7 +12,6 @@ import { PackageManagerService } from "../PackageManager/abstraction.js";
 import { UpWebiny } from "../../tool/UpWebiny/abstraction.js";
 import { Input } from "../../base/Input/abstraction.js";
 import { UpgradeHistory } from "../../tool/UpgradeHistory/abstraction.js";
-import { ReferencesService } from "../../service/References/abstractions.js";
 import { Version } from "../../base/Version/index.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
@@ -60,12 +59,6 @@ const createMockUpWebiny = (): UpWebiny.Interface => ({
     reconcile: vi.fn()
 });
 
-const createMockReferencesService = (): ReferencesService.Interface => ({
-    getReference: vi.fn().mockReturnValue(null),
-    getVersion: vi.fn().mockReturnValue(null),
-    clearCache: vi.fn()
-});
-
 const createContainer = (
     upgrades: ReturnType<typeof createMockUpgrade>[],
     ctx: Context.Interface,
@@ -87,7 +80,6 @@ const createContainer = (
         update: vi.fn().mockResolvedValue(undefined)
     });
     container.registerInstance(UpWebiny, createMockUpWebiny());
-    container.registerInstance(ReferencesService, createMockReferencesService());
     container.registerInstance(Input, {
         dryRun: false
     } as Input.Interface);
@@ -407,7 +399,7 @@ describe("UpgradeHandler", () => {
             expect(history.add).toHaveBeenCalledWith(v("6.2.0"));
         });
 
-        it("runs reconciliation after first install: clearCache → reconcile → second install", async () => {
+        it("runs reconciliation after first install: install → reconcile → second install", async () => {
             const order: string[] = [];
             const upgrade = createMockUpgrade("6.1.0");
             const ctx = createMockContext("6.0.0", "6.1.0");
@@ -418,11 +410,6 @@ describe("UpgradeHandler", () => {
                 order.push("install");
             });
 
-            const refs = container.resolve(ReferencesService);
-            vi.mocked(refs.clearCache).mockImplementation(() => {
-                order.push("clearCache");
-            });
-
             const upWebiny = container.resolve(UpWebiny);
             vi.mocked(upWebiny.reconcile).mockImplementation(() => {
                 order.push("reconcile");
@@ -431,7 +418,7 @@ describe("UpgradeHandler", () => {
             const handler = container.resolve(UpgradeHandlerToken);
             await handler.handle({ version: v("6.1.0") });
 
-            expect(order).toEqual(["install", "clearCache", "reconcile", "install"]);
+            expect(order).toEqual(["install", "reconcile", "install"]);
         });
 
         it("does not duplicate target version history entry if already present", async () => {
