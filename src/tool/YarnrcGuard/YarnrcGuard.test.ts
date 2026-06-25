@@ -156,6 +156,15 @@ describe("YarnrcGuard", () => {
         expect(() => guard.execute(params("6.5.0", "6.5.0"))).toThrow(YarnrcGuardError);
     });
 
+    it("treats .yarnrc.yml with non-object content as all settings missing", () => {
+        vi.mocked(fs.existsSync).mockReturnValue(true);
+        vi.mocked(fs.readFileSync).mockReturnValue("just a string");
+        const { container } = createContainer();
+        const guard = container.resolve(YarnrcGuardToken);
+
+        expect(() => guard.execute(params("6.5.0", "6.5.0"))).toThrow(YarnrcGuardError);
+    });
+
     it("reads .yarnrc.yml from context.cwd", () => {
         vi.mocked(fs.existsSync).mockReturnValue(true);
         vi.mocked(fs.readFileSync).mockReturnValue(FULL_YARNRC);

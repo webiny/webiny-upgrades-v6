@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import yaml from "js-yaml";
+import { load as yamlLoad } from "js-yaml";
 import { YarnrcGuard as YarnrcGuardAbstraction } from "./abstraction.js";
 import { YarnrcGuardError } from "./YarnrcGuardError.js";
 import { Context } from "../../base/Context/index.js";
@@ -47,8 +47,12 @@ class YarnrcGuardImpl implements YarnrcGuardAbstraction.Interface {
             return [...REQUIRED_SETTINGS];
         }
 
-        const content = fs.readFileSync(yarnrcPath, "utf-8");
-        const parsed = yaml.load(content);
+        const content = fs.readFileSync(yarnrcPath, "utf-8").trim();
+        if (!content) {
+            return [...REQUIRED_SETTINGS];
+        }
+
+        const parsed = yamlLoad(content);
         if (typeof parsed !== "object" || parsed === null) {
             return [...REQUIRED_SETTINGS];
         }
