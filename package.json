@@ -16,7 +16,7 @@
     "adio:check": "adio"
   },
   "dependencies": {
-    "@webiny/di": "^1.0.1",
+    "@webiny/di": "^1.0.2",
     "execa": "^9.6.1",
     "js-yaml": "4.2.0",
     "load-json-file": "^7.0.1",
