@@ -1674,14 +1674,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:5.0.0":
-  version: 5.0.0
-  resolution: "js-yaml@npm:5.0.0"
+"js-yaml@npm:5.2.0":
+  version: 5.2.0
+  resolution: "js-yaml@npm:5.2.0"
   dependencies:
     argparse: "npm:^2.0.1"
   bin:
     js-yaml: bin/js-yaml.mjs
-  checksum: 10/51691da5a1b3894ffdd6ffe386d061fecf8769d135560dce8f3d3b7c5f7b167ec7fbe2c232c91135d58216b2f6ba215e85ac60fe569c46f0a9024f2ff6dec47e
+  checksum: 10/8a5e55c5d0fcafae4ac02114a99dc070048b8e5a82a056089ce1f69f8a00fd8eb05b622e76ad50aac1f9d409010636c9616c6b2ed4e58dae138379a60d301220
   languageName: node
   linkType: hard
 
@@ -2906,7 +2906,7 @@ __metadata:
     "@webiny/di": "npm:^1.0.2"
     adio: "npm:^3.0.1"
     execa: "npm:^9.6.1"
-    js-yaml: "npm:5.0.0"
+    js-yaml: "npm:5.2.0"
     load-json-file: "npm:^7.0.1"
     oxfmt: "npm:^0.55.0"
     oxlint: "npm:^1.70.0"
