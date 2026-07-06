@@ -13,18 +13,19 @@
     "lint:check": "oxlint --deny-warnings",
     "lint:fix": "oxlint --fix",
     "full:fix": "yarn format:fix && yarn lint:fix",
-    "adio:check": "adio"
+    "adio:check": "adio",
+    "full": "yarn adio:check && yarn full:fix && yarn build && yarn test:coverage"
   },
   "dependencies": {
     "@webiny/di": "^1.0.2",
     "execa": "^9.6.1",
-    "js-yaml": "5.0.0",
+    "js-yaml": "5.2.1",
     "load-json-file": "^7.0.1",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3",
     "semver": "^7.8.5",
     "ts-morph": "^28.0.0",
-    "tsx": "^4.22.4",
+    "tsx": "^4.22.5",
     "type-fest": "^5.7.0",
     "typescript": "6.0.3",
     "write-json-file": "^7.0.0",
@@ -38,8 +39,8 @@
     "@types/yargs": "^17.0.35",
     "@vitest/coverage-v8": "^4.1.9",
     "adio": "^3.0.1",
-    "oxfmt": "^0.55.0",
-    "oxlint": "^1.70.0",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
     "vitest": "^4.1.9"
   },
   "engines": {
