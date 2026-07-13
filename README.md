@@ -12,25 +12,70 @@ CLI tool that automates upgrading a Webiny project to a target version. It updat
 npx https://github.com/webiny/webiny-upgrades-v6 <version> [options]
 ```
 
-### Example
-
-```bash
-npx https://github.com/webiny/webiny-upgrades-v6 6.1.0 --cwd /path/to/my-webiny-project
-```
-
 ## Options
 
-| Option                    | Type       | Default                      | Description                                                                                                                                                                                               |
-| ------------------------- | ---------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `version`                 | positional | —                            | Target upgrade version (required, must be valid semver)                                                                                                                                                   |
-| `--cwd`                   | string     | `process.cwd()`              | Path to the Webiny project root                                                                                                                                                                           |
-| `--registry`              | string     | `https://registry.npmjs.org` | npm registry URL                                                                                                                                                                                          |
-| `--debug`                 | boolean    | `false`                      | Enable verbose debug logging                                                                                                                                                                              |
-| `--force`                 | boolean    | `false`                      | Re-run upgrade even if already applied (based on installed version)                                                                                                                                       |
-| `--package-manager`       | string     | auto-detect                  | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted)                                                                                                                     |
-| `--dry-run`               | boolean    | `false`                      | Resolve upgrades and build the pool but do not execute them                                                                                                                                               |
-| `--skip-dependency-guard` | boolean    | `true`                       | Skip the dependency guard mismatch check                                                                                                                                                                  |
-| `--install-version`       | string     | —                            | Override the npm version written to package.json for `@webiny/*` packages. Use when the upgrade script version differs from the published package version (e.g. `--install-version 0.0.0-unstable.abcde`) |
+| Option                    | Type       | Default                      | Description                                                                            |
+| ------------------------- | ---------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| `version`                 | positional | `latest`                     | Target upgrade version (valid semver or `latest`).                                     |
+| `--cwd`                   | string     | `process.cwd()`              | Path to the Webiny project root.                                                       |
+| `--registry`              | string     | `https://registry.npmjs.org` | npm registry URL to resolve versions from.                                             |
+| `--force`                 | boolean    | `false`                      | Re-run upgrade even if already recorded in history.                                    |
+| `--dry-run`               | boolean    | `false`                      | Resolve upgrades and build the pool but do not execute them.                           |
+| `--install-version`       | string     | —                            | Override the version written to `package.json` for `@webiny/*` packages.               |
+| `--package-manager`       | string     | auto-detect                  | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted). |
+| `--skip-dependency-guard` | boolean    | `false`                      | Skip the dependency guard mismatch check.                                              |
+| `--log-level`             | string     | `debug`                      | Log level: `debug`, `info`, `warning`, or `error`.                                     |
+| `--json`                  | boolean    | `false`                      | Output logs as NDJSON (one JSON object per line).                                      |
+
+## Examples
+
+### Upgrade to the latest version
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6
+```
+
+### Upgrade to a specific version
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 6.3.0
+```
+
+### Target a different project directory
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 6.3.0 --cwd /path/to/my-webiny-project
+```
+
+### Test against a local npm registry (e.g. Verdaccio)
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 0.0.0-local.abc123 \
+  --registry=http://localhost:4873 \
+  --install-version=0.0.0-local.abc123
+```
+
+`--registry` tells the tool where to resolve the version. `--install-version` tells it which version to write into `package.json` for `@webiny/*` packages.
+
+### Install a release candidate
+
+Run the `6.5.0` upgrade script but install RC packages:
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 6.5.0 --install-version=6.5.0-rc.1
+```
+
+### Re-run an already-applied upgrade
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 6.3.0 --force
+```
+
+### Dry run (preview without changes)
+
+```bash
+npx https://github.com/webiny/webiny-upgrades-v6 6.3.0 --dry-run
+```
 
 ## Output
 
