@@ -5,29 +5,35 @@ import { createUpgradeIntegrationHarness } from "../utils/createUpgradeIntegrati
 const fixtureDir = path.join(import.meta.dirname, "..", "fixtures", "chain", "before");
 
 describe("Upgrade chain - integration", () => {
-    it("runs all shipped upgrades from 6.0.0 to 6.4.0 in semver order", async () => {
+    it("runs all shipped upgrades from 6.0.0 to 6.4.4 in semver order", async () => {
         const harness = await createUpgradeIntegrationHarness({
             fixtureDir,
             currentVersion: "6.0.0",
-            targetVersion: "6.4.0"
+            targetVersion: "6.4.4"
         });
 
         await harness.run();
 
         const history = harness.upgradeHistory.list();
-        expect(history.map(entry => entry.version)).toEqual(["6.1.0", "6.2.0", "6.3.0", "6.4.0"]);
+        expect(history.map(entry => entry.version)).toEqual([
+            "6.1.0",
+            "6.2.0",
+            "6.3.0",
+            "6.4.0",
+            "6.4.4"
+        ]);
 
         const pkg = harness.readPackageJson();
 
-        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.4.0");
-        expect(pkg.dependencies?.webiny).toBe("6.4.0");
-        expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.4.0");
+        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.4.4");
+        expect(pkg.dependencies?.webiny).toBe("6.4.4");
+        expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.4.4");
 
         expect(pkg.devDependencies?.typescript).toBe("6.0.3");
         expect(pkg.dependencies?.react).toBe("18.3.1");
         expect(pkg.dependencies?.["react-dom"]).toBe("18.3.1");
         expect(pkg.devDependencies?.react).toBeUndefined();
         expect(pkg.devDependencies?.["react-dom"]).toBeUndefined();
-        expect(pkg.devDependencies?.["@types/react"]).toBe("18.3.29");
+        expect(pkg.devDependencies?.["@types/react"]).toBe("18.3.31");
     });
 });
