@@ -14,18 +14,18 @@ npx https://github.com/webiny/webiny-upgrades-v6 <version> [options]
 
 ## Options
 
-| Option                    | Type       | Default                      | Description                                                                                         |
-| ------------------------- | ---------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| `version`                 | positional | `latest`                     | Target upgrade version (valid semver or `latest`).                                                  |
-| `--cwd`                   | string     | `process.cwd()`              | Path to the Webiny project root.                                                                    |
-| `--registry`              | string     | `https://registry.npmjs.org` | npm registry URL to resolve versions from.                                                          |
-| `--force`                 | boolean    | `false`                      | Re-run upgrade even if already recorded in history.                                                 |
-| `--dry-run`               | boolean    | `false`                      | Resolve upgrades and build the pool but do not execute them.                                        |
-| `--install-version`       | string     | —                            | Override the version written to `package.json` for `@webiny/*` packages.                            |
-| `--package-manager`       | string     | auto-detect                  | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted).              |
-| `--skip-dependency-guard` | boolean    | `false`                      | Skip the dependency guard mismatch check.                                                           |
-| `--log-level`             | string     | `debug`                      | Log level: `debug`, `info`, `warning`, or `error`.                                                  |
-| `--json`                  | boolean    | `false`                      | Output logs as NDJSON (one JSON object per line).                                                   |
+| Option                    | Type       | Default                      | Description                                                                            |
+| ------------------------- | ---------- | ---------------------------- | -------------------------------------------------------------------------------------- |
+| `version`                 | positional | `latest`                     | Target upgrade version (valid semver or `latest`).                                     |
+| `--cwd`                   | string     | `process.cwd()`              | Path to the Webiny project root.                                                       |
+| `--registry`              | string     | `https://registry.npmjs.org` | npm registry URL to resolve versions from.                                             |
+| `--force`                 | boolean    | `false`                      | Re-run upgrade even if already recorded in history.                                    |
+| `--dry-run`               | boolean    | `false`                      | Resolve upgrades and build the pool but do not execute them.                           |
+| `--install-version`       | string     | —                            | Override the version written to `package.json` for `@webiny/*` packages.               |
+| `--package-manager`       | string     | auto-detect                  | Package manager to use: `yarn`, `pnpm`, or `npm` (detected from lock file if omitted). |
+| `--skip-dependency-guard` | boolean    | `false`                      | Skip the dependency guard mismatch check.                                              |
+| `--log-level`             | string     | `debug`                      | Log level: `debug`, `info`, `warning`, or `error`.                                     |
+| `--json`                  | boolean    | `false`                      | Output logs as NDJSON (one JSON object per line).                                      |
 
 ## Examples
 
