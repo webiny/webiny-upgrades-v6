@@ -30,6 +30,7 @@ describe("Upgrade chain - integration", () => {
         expect(pkg.dependencies?.webiny).toBe("6.5.0");
         expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.5.0");
 
+        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.3");
         expect(pkg.devDependencies?.typescript).toBe("7.0.2");
         expect(pkg.packageManager).toBe("yarn@4.17.1");
         expect(pkg.dependencies?.react).toBe("18.3.1");
