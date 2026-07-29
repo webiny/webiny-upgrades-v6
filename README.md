@@ -1,5 +1,9 @@
 # webiny-upgrades-v6
 
+[![CI](https://github.com/webiny/webiny-upgrades-v6/actions/workflows/ci.yml/badge.svg)](https://github.com/webiny/webiny-upgrades-v6/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/webiny/webiny-upgrades-v6/actions/workflows/codeql.yml/badge.svg)](https://github.com/webiny/webiny-upgrades-v6/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/webiny/webiny-upgrades-v6/badge)](https://securityscorecards.dev/viewer/?uri=github.com/webiny/webiny-upgrades-v6)
+
 CLI tool that automates upgrading a Webiny project to a target version. It updates all `@webiny/*` package versions in the project's `package.json` and runs the version-specific upgrade script.
 
 ## Requirements
