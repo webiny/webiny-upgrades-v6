@@ -18,18 +18,18 @@ describe("Upgrade 6.5.0 - integration", () => {
 
         const pkg = harness.readPackageJson();
 
-        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.3");
+        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.6");
         expect(pkg.devDependencies?.typescript).toBe("7.0.2");
-        expect(pkg.packageManager).toBe("yarn@4.17.1");
+        expect(pkg.packageManager).toBe("yarn@4.18.1");
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.5.0");
         expect(pkg.dependencies?.webiny).toBe("6.5.0");
         expect(pkg.dependencies?.["@webiny/mcp"]).toBe("6.5.0");
 
         expect(
-            fs.existsSync(path.join(harness.tmpDir, ".yarn", "releases", "yarn-4.17.1.cjs"))
+            fs.existsSync(path.join(harness.tmpDir, ".yarn", "releases", "yarn-4.18.1.cjs"))
         ).toBe(true);
         expect(harness.readFile(".yarnrc.yml")).toContain(
-            "yarnPath: .yarn/releases/yarn-4.17.1.cjs"
+            "yarnPath: .yarn/releases/yarn-4.18.1.cjs"
         );
 
         expect(harness.upgradeHistory.list()).toContainEqual(
@@ -48,7 +48,7 @@ describe("Upgrade 6.5.0 - integration", () => {
 
         const pkg = harness.readPackageJson();
 
-        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.3");
+        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.6");
         expect(pkg.devDependencies?.typescript).toBe("7.0.2");
         expect(pkg.packageManager).toBeUndefined();
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.5.0");
