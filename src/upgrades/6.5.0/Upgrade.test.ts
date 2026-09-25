@@ -91,11 +91,11 @@ describe("Upgrade 6.5.0 - execute", () => {
         vi.clearAllMocks();
     });
 
-    it("sets @types/node devDependency to ^24.13.3", async () => {
+    it("sets @types/node devDependency to ^24.13.6", async () => {
         const file = createMockPackageJsonFile();
         const upgrade = createContainer(file).resolve(Upgrade);
         await upgrade.execute();
-        expect(file.getDevDependency("@types/node")).toBe("^24.13.3");
+        expect(file.getDevDependency("@types/node")).toBe("^24.13.6");
     });
 
     it("sets typescript devDependency to 7.0.2", async () => {
@@ -125,7 +125,7 @@ describe("Upgrade 6.5.0 - execute", () => {
         const packageManagerService = container.resolve(PackageManagerService);
         const upgrade = container.resolve(Upgrade);
         await upgrade.execute();
-        expect(packageManagerService.update).toHaveBeenCalledWith("4.17.1");
+        expect(packageManagerService.update).toHaveBeenCalledWith("4.18.1");
     });
 
     it("does not call packageManagerService.update when project does not use yarn", async () => {

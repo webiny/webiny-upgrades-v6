@@ -10,6 +10,7 @@ export default {
       "@vitest/coverage-v8",
       "adio",
       "oxfmt",
+      "vite",
       "oxlint"
     ],
     peerDependencies: true
