@@ -18,7 +18,7 @@ describe("Upgrade 6.5.0 - integration", () => {
 
         const pkg = harness.readPackageJson();
 
-        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.6");
+        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.19.0");
         expect(pkg.devDependencies?.typescript).toBe("7.0.2");
         expect(pkg.packageManager).toBe("yarn@4.18.1");
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.5.0");
@@ -48,7 +48,7 @@ describe("Upgrade 6.5.0 - integration", () => {
 
         const pkg = harness.readPackageJson();
 
-        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.13.6");
+        expect(pkg.devDependencies?.["@types/node"]).toBe("^24.19.0");
         expect(pkg.devDependencies?.typescript).toBe("7.0.2");
         expect(pkg.packageManager).toBeUndefined();
         expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.5.0");
