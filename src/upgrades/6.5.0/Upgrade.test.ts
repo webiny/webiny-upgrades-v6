@@ -91,11 +91,11 @@ describe("Upgrade 6.5.0 - execute", () => {
         vi.clearAllMocks();
     });
 
-    it("sets @types/node devDependency to ^24.19.0", async () => {
+    it("sets @types/node devDependency to ^24.19.2", async () => {
         const file = createMockPackageJsonFile();
         const upgrade = createContainer(file).resolve(Upgrade);
         await upgrade.execute();
-        expect(file.getDevDependency("@types/node")).toBe("^24.19.0");
+        expect(file.getDevDependency("@types/node")).toBe("^24.19.2");
     });
 
     it("sets typescript devDependency to 7.0.2", async () => {

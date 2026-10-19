@@ -20,7 +20,7 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
 
     public async execute(): Promise<void> {
         const packageJson = this.packageJsonTool.loadOrThrow();
-        packageJson.setDevDependency("@types/node", "^24.19.0");
+        packageJson.setDevDependency("@types/node", "^24.19.2");
         packageJson.setDevDependency("typescript", "7.0.2");
         this.packageJsonTool.save(packageJson);
 
