@@ -15,16 +15,16 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
     }
 
     public async execute(): Promise<void> {
-        // From 6.6.0, production environments get DynamoDB point-in-time recovery and File Manager
-        // bucket versioning by default. Existing projects opt out so the next deploy leaves their
+        // From 6.6.0, production environments get DynamoDB point-in-time recovery and S3 bucket
+        // versioning by default. Existing projects opt out so the next deploy leaves their
         // infrastructure as it is.
         const webinyConfig = this.webinyConfigTool.read();
-        webinyConfig.jsx.addChild("Infra.DynamoDb.PITR", {
+        webinyConfig.jsx.addChild("Infra.DynamoDb.Pitr", {
             comment:
-                "Point-in-time recovery and File Manager bucket versioning are on by default for production environments. Remove these two lines to enable them.",
+                "DynamoDB point-in-time recovery and S3 bucket versioning are on by default for production environments. Remove these two lines to enable them.",
             props: { enabled: "false" }
         });
-        webinyConfig.jsx.addChild("Infra.FileManager.BucketVersioning", {
+        webinyConfig.jsx.addChild("Infra.S3Bucket.Versioning", {
             props: { enabled: "false" }
         });
         this.webinyConfigTool.save(webinyConfig);
