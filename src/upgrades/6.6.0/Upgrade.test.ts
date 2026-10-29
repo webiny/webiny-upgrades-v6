@@ -61,18 +61,18 @@ describe("Upgrade 6.6.0 - execute", () => {
         vi.clearAllMocks();
     });
 
-    it("adds Infra.DynamoDb.Pitr and Infra.S3Bucket.Versioning with enabled={false}", async () => {
+    it("adds Infra.Core.DynamoDb.Pitr and Infra.Core.S3Bucket.Versioning with enabled={false}", async () => {
         const container = createContainer();
         const webinyConfigTool = container.resolve(WebinyConfigTool);
         await container.resolve(Upgrade).execute();
 
         const mockFile = vi.mocked(webinyConfigTool.read).mock.results[0].value;
         expect(mockFile.jsx.addChild).toHaveBeenCalledWith(
-            "Infra.DynamoDb.Pitr",
+            "Infra.Core.DynamoDb.Pitr",
             expect.objectContaining({ props: { enabled: "false" } })
         );
         expect(mockFile.jsx.addChild).toHaveBeenCalledWith(
-            "Infra.S3Bucket.Versioning",
+            "Infra.Core.S3Bucket.Versioning",
             expect.objectContaining({ props: { enabled: "false" } })
         );
         expect(webinyConfigTool.save).toHaveBeenCalledWith(mockFile);

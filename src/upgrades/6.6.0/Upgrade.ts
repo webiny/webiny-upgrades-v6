@@ -19,12 +19,12 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         // versioning by default. Existing projects opt out so the next deploy leaves their
         // infrastructure as it is.
         const webinyConfig = this.webinyConfigTool.read();
-        webinyConfig.jsx.addChild("Infra.DynamoDb.Pitr", {
+        webinyConfig.jsx.addChild("Infra.Core.DynamoDb.Pitr", {
             comment:
                 "DynamoDB point-in-time recovery and S3 bucket versioning are on by default for production environments. Remove these two lines to enable them.",
             props: { enabled: "false" }
         });
-        webinyConfig.jsx.addChild("Infra.S3Bucket.Versioning", {
+        webinyConfig.jsx.addChild("Infra.Core.S3Bucket.Versioning", {
             props: { enabled: "false" }
         });
         this.webinyConfigTool.save(webinyConfig);

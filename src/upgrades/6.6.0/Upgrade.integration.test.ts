@@ -19,8 +19,8 @@ describe("Upgrade 6.6.0 - integration", () => {
         expect(pkg.dependencies?.webiny).toBe("6.6.0");
 
         const webinyConfig = harness.readFile("webiny.config.tsx");
-        expect(webinyConfig).toContain("<Infra.DynamoDb.Pitr enabled={false} />");
-        expect(webinyConfig).toContain("<Infra.S3Bucket.Versioning enabled={false} />");
+        expect(webinyConfig).toContain("<Infra.Core.DynamoDb.Pitr enabled={false} />");
+        expect(webinyConfig).toContain("<Infra.Core.S3Bucket.Versioning enabled={false} />");
         expect(webinyConfig).toContain('<Infra.Aws.DefaultRegion name={"eu-central-1"} />');
 
         expect(harness.upgradeHistory.list()).toContainEqual(
@@ -39,7 +39,7 @@ describe("Upgrade 6.6.0 - integration", () => {
         await harness.run();
 
         const webinyConfig = harness.readFile("webiny.config.tsx");
-        expect(webinyConfig.match(/<Infra\.DynamoDb\.Pitr /g)).toHaveLength(1);
-        expect(webinyConfig.match(/<Infra\.S3Bucket\.Versioning /g)).toHaveLength(1);
+        expect(webinyConfig.match(/<Infra\.Core\.DynamoDb\.Pitr /g)).toHaveLength(1);
+        expect(webinyConfig.match(/<Infra\.Core\.S3Bucket\.Versioning /g)).toHaveLength(1);
     });
 });
