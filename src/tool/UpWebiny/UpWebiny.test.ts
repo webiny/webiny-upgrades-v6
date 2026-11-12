@@ -124,6 +124,26 @@ describe("UpWebiny", () => {
             expect(file.getDependency("@webiny/cognito")).toBe("6.1.0");
         });
 
+        it("moves @webiny/cli from devDependencies to dependencies", async () => {
+            const file = createMockPackageJsonFile({
+                devDependencies: { "@webiny/cli": "6.0.0" }
+            });
+            const tool = createContainer(file).resolve(UpWebiny);
+            tool.execute({ version: v("6.1.0") });
+            expect(file.getDependency("@webiny/cli")).toBe("6.1.0");
+            expect(file.getDevDependency("@webiny/cli")).toBeNull();
+        });
+
+        it("does not add @webiny/cli when the project does not have it", async () => {
+            const file = createMockPackageJsonFile({
+                dependencies: { "@webiny/cli-aws": "6.5.0" }
+            });
+            const tool = createContainer(file).resolve(UpWebiny);
+            tool.execute({ version: v("6.6.0") });
+            expect(file.getDependency("@webiny/cli")).toBeNull();
+            expect(file.getDependency("@webiny/cli-aws")).toBe("6.6.0");
+        });
+
         it("does not upgrade packages in the doNotUpgrade list", async () => {
             const file = createMockPackageJsonFile({
                 dependencies: {

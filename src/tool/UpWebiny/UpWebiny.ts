@@ -28,8 +28,11 @@ class UpWebinyImpl implements UpWebinyAbstraction.Interface {
          */
         packageJson.setDependency("webiny", version.raw);
         packageJson.removeDevDependency("webiny");
-        packageJson.setDependency("@webiny/cli", version.raw);
-        packageJson.removeDevDependency("@webiny/cli");
+        /**
+         * `@webiny/cli` is not added here. Before 6.6.0 every project already has it, and the loops
+         * below update it and move it out of devDependencies. From 6.6.0 the CLI is `@webiny/cli-aws`
+         * and `@webiny/cli` is no longer published, so adding it would break the install.
+         */
         packageJson.setDependency("@webiny/mcp", version.raw);
         /**
          * If @webiny/cognito is present, we want to move it to dependencies and update the version. This is because in 6.0.0 it was added as a dev dependency, but it should be a regular dependency.

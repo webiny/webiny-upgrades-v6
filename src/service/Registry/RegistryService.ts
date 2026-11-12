@@ -2,10 +2,17 @@ import { RegistryService as RegistryServiceAbstraction } from "./abstraction.js"
 import { Logger } from "../../base/Logger/index.js";
 import { Input } from "../../base/Input/index.js";
 import { Version } from "../../base/Version/index.js";
+import { readTarballFile } from "./readTarballFile.js";
+
+interface IRegistryPackageVersion {
+    dist?: {
+        tarball?: string;
+    };
+}
 
 interface IRegistryPackageData {
     "dist-tags": Record<string, string>;
-    versions: Record<string, unknown>;
+    versions: Record<string, IRegistryPackageVersion>;
 }
 
 class RegistryServiceImpl implements RegistryServiceAbstraction.Interface {
@@ -60,11 +67,57 @@ class RegistryServiceImpl implements RegistryServiceAbstraction.Interface {
         return parsed;
     }
 
-    private async fetchPackageData(packageName: string): Promise<IRegistryPackageData | null> {
+    public async getFile(
+        packageName: string,
+        version: string | Version,
+        filePath: string
+    ): Promise<string | null> {
+        const versionStr = typeof version === "string" ? version : version.format();
+        /**
+         * A package that isn't published is the same as a version that isn't, so a 404 here
+         * returns null without a warning.
+         */
+        const data = await this.fetchPackageData(packageName, { warnOnNotFound: false });
+        const tarballUrl = data?.versions[versionStr]?.dist?.tarball;
+        if (!tarballUrl) {
+            return null;
+        }
+        try {
+            const response = await fetch(tarballUrl);
+            if (!response.ok) {
+                this.logger.warn(
+                    `Registry returned %s for the "%s@%s" tarball.`,
+                    response.status,
+                    packageName,
+                    versionStr
+                );
+                return null;
+            }
+            const tarball = Buffer.from(await response.arrayBuffer());
+            return readTarballFile(tarball, filePath);
+        } catch (ex) {
+            this.logger.error(
+                `Failed to read "%s" from the "%s@%s" tarball: %s`,
+                filePath,
+                packageName,
+                versionStr,
+                ex.message
+            );
+            return null;
+        }
+    }
+
+    private async fetchPackageData(
+        packageName: string,
+        options: { warnOnNotFound: boolean } = { warnOnNotFound: true }
+    ): Promise<IRegistryPackageData | null> {
         const url = `${this.input.registry}/${packageName}`;
         try {
             const response = await fetch(url);
             if (!response.ok) {
+                if (response.status === 404 && !options.warnOnNotFound) {
+                    return null;
+                }
                 this.logger.warn(
                     `Registry returned %s for package "%s".`,
                     response.status,

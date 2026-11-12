@@ -5,7 +5,7 @@ import { createUpgradeIntegrationHarness } from "../../__tests__/utils/createUpg
 const fixtureDir = path.join(import.meta.dirname, "__tests__", "fixtures", "before");
 
 describe("Upgrade 6.6.0 - integration", () => {
-    it("opts existing projects out of PITR and bucket versioning, and pins @webiny/* to 6.6.0", async () => {
+    it("moves the project to @webiny/cli-aws, opts it out of PITR and bucket versioning, and pins @webiny/* to 6.6.0", async () => {
         const harness = await createUpgradeIntegrationHarness({
             fixtureDir,
             currentVersion: "6.5.0",
@@ -15,7 +15,10 @@ describe("Upgrade 6.6.0 - integration", () => {
         await harness.run();
 
         const pkg = harness.readPackageJson();
-        expect(pkg.dependencies?.["@webiny/cli"]).toBe("6.6.0");
+        expect(pkg.dependencies?.["@webiny/cli"]).toBeUndefined();
+        expect(pkg.dependencies?.["@webiny/cli-aws"]).toBe("6.6.0");
+        expect(pkg.dependencies?.["@webiny/project-aws"]).toBe("6.6.0");
+        expect(pkg.dependencies?.["@webiny/db-dynamodb"]).toBe("6.6.0");
         expect(pkg.dependencies?.webiny).toBe("6.6.0");
 
         const webinyConfig = harness.readFile("webiny.config.tsx");
@@ -37,6 +40,10 @@ describe("Upgrade 6.6.0 - integration", () => {
 
         await harness.run();
         await harness.run();
+
+        const pkg = harness.readPackageJson();
+        expect(pkg.dependencies?.["@webiny/cli"]).toBeUndefined();
+        expect(pkg.dependencies?.["@webiny/cli-aws"]).toBe("6.6.0");
 
         const webinyConfig = harness.readFile("webiny.config.tsx");
         expect(webinyConfig.match(/<Infra\.Core\.DynamoDb\.Pitr /g)).toHaveLength(1);

@@ -2,21 +2,13 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { Container } from "@webiny/di";
 import { DependencyGuard as DependencyGuardImpl } from "./DependencyGuard.js";
 import { DependencyGuard } from "./abstraction.js";
-import { Context } from "../../base/Context/index.js";
 import { Input } from "../../base/Input/index.js";
 import { Logger } from "../../base/Logger/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
-import { ReferencesFileMissingError } from "../../service/References/index.js";
+import { ReferencesService } from "../../service/References/index.js";
 import { ReferencesService as ReferencesServiceImpl } from "../../service/References/ReferencesService.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
-
-vi.mock("load-json-file", () => ({
-    loadJsonFileSync: vi.fn()
-}));
-
-import { loadJsonFileSync } from "load-json-file";
-const mockLoadJsonFileSync = vi.mocked(loadJsonFileSync);
 
 const makeReferences = (
     overrides: {
@@ -42,30 +34,24 @@ const makeReferences = (
 
 const createContainer = (
     options: {
-        cwd?: string;
         skipDependencyGuard?: boolean;
         packageJsonData?: Parameters<typeof createMockPackageJsonFile>[0];
         packageJsonFile?: ReturnType<typeof createMockPackageJsonFile> | null;
-        references?: object;
+        references?: ReturnType<typeof makeReferences>;
     } = {}
 ) => {
-    const {
-        cwd = "/project",
-        references = makeReferences(),
-        skipDependencyGuard = false
-    } = options;
+    const { references = makeReferences(), skipDependencyGuard = false } = options;
     const file =
         options.packageJsonFile !== undefined
             ? options.packageJsonFile
             : createMockPackageJsonFile(options.packageJsonData);
 
-    mockLoadJsonFileSync.mockReturnValue(references as any);
+    const referencesService = new ReferencesServiceImpl(
+        references.references as ReferencesService.Reference[]
+    );
+    vi.spyOn(referencesService, "getVersion");
 
     const container = new Container();
-    container.registerInstance(Context, {
-        cwd,
-        resolve: vi.fn().mockReturnValue(`${cwd}/node_modules/@webiny/cli/files/references.json`)
-    } as unknown as Context.Interface);
     container.registerInstance(Input, { skipDependencyGuard } as Input.Interface);
     container.registerInstance(Logger, {
         info: vi.fn(),
@@ -83,7 +69,7 @@ const createContainer = (
         }),
         save: vi.fn()
     });
-    container.register(ReferencesServiceImpl);
+    container.registerInstance(ReferencesService, referencesService);
     container.register(DependencyGuardImpl);
     return container;
 };
@@ -237,22 +223,15 @@ describe("DependencyGuard", () => {
         });
 
         it("returns empty array immediately when skipDependencyGuard is true", () => {
-            const guard = createContainer({
+            const container = createContainer({
                 skipDependencyGuard: true,
                 packageJsonData: { dependencies: { react: "17.0.0" } },
                 references: makeReferences({ dependencies: { react: "18.2.0" } })
-            }).resolve(DependencyGuard);
+            });
+            const guard = container.resolve(DependencyGuard);
 
             expect(guard.execute()).toEqual([]);
-            expect(mockLoadJsonFileSync).not.toHaveBeenCalled();
-        });
-
-        it("throws when references.json cannot be read", () => {
-            const guard = createContainer().resolve(DependencyGuard);
-            mockLoadJsonFileSync.mockImplementation(() => {
-                throw new Error("ENOENT");
-            });
-            expect(() => guard.execute()).toThrow(ReferencesFileMissingError);
+            expect(container.resolve(ReferencesService).getVersion).not.toHaveBeenCalled();
         });
     });
 });

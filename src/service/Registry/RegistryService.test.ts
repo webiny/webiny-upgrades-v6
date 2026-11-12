@@ -5,6 +5,7 @@ import { RegistryService } from "./abstraction.js";
 import { Input } from "../../base/Input/abstraction.js";
 import { Logger } from "../../base/Logger/abstraction.js";
 import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
+import { createTarball } from "../../__tests__/utils/createTarball.js";
 
 const createContainer = (registry = "https://registry.npmjs.org") => {
     const container = new Container();
@@ -140,6 +141,86 @@ describe("RegistryService", () => {
             const service = createContainer().resolve(RegistryService);
             const result = await service.getVersion("@webiny/cli", "6.0.0");
             expect(result).toBeNull();
+        });
+    });
+
+    describe("getFile", () => {
+        const TARBALL_URL = "https://registry.npmjs.org/@webiny/cli/-/cli-6.0.0.tgz";
+
+        const mockPackage = (tarball: Buffer | null, metadataStatus = 200) => {
+            return vi.spyOn(global, "fetch").mockImplementation(async input => {
+                if (input === TARBALL_URL) {
+                    return {
+                        ok: tarball !== null,
+                        status: tarball ? 200 : 500,
+                        arrayBuffer: async () => tarball
+                    } as unknown as Response;
+                }
+                return {
+                    ok: metadataStatus === 200,
+                    status: metadataStatus,
+                    json: async () => ({
+                        "dist-tags": {},
+                        versions: { "6.0.0": { dist: { tarball: TARBALL_URL } } }
+                    })
+                } as Response;
+            });
+        };
+
+        it("returns a file from the version's tarball", async () => {
+            const fetchSpy = mockPackage(createTarball({ "files/references.json": "content" }));
+            const service = createContainer().resolve(RegistryService);
+            const result = await service.getFile("@webiny/cli", "6.0.0", "files/references.json");
+            expect(result).toBe("content");
+            expect(fetchSpy).toHaveBeenCalledWith(TARBALL_URL);
+        });
+
+        it("returns null when the tarball doesn't have the file", async () => {
+            mockPackage(createTarball({ "package.json": "{}" }));
+            const service = createContainer().resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.0.0", "references.json")).toBeNull();
+        });
+
+        it("returns null without downloading when the version doesn't exist", async () => {
+            const fetchSpy = mockPackage(createTarball({ "references.json": "content" }));
+            const service = createContainer().resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.1.0", "references.json")).toBeNull();
+            expect(fetchSpy).not.toHaveBeenCalledWith(TARBALL_URL);
+        });
+
+        it("returns null without a warning when the package doesn't exist", async () => {
+            mockPackage(null, 404);
+            const container = createContainer();
+            const logger = container.resolve(Logger);
+            const service = container.resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.0.0", "references.json")).toBeNull();
+            expect(logger.warn).not.toHaveBeenCalled();
+        });
+
+        it("returns null and logs an error when the tarball download throws", async () => {
+            mockPackage(createTarball({ "references.json": "content" }));
+            const fetchMock = vi.mocked(global.fetch);
+            const metadataFetch = fetchMock.getMockImplementation()!;
+            fetchMock.mockImplementation(async input => {
+                if (input === TARBALL_URL) {
+                    throw new Error("socket hang up");
+                }
+                return metadataFetch(input);
+            });
+            const container = createContainer();
+            const logger = container.resolve(Logger);
+            const service = container.resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.0.0", "references.json")).toBeNull();
+            expect(logger.error).toHaveBeenCalled();
+        });
+
+        it("returns null and logs a warning when the tarball download fails", async () => {
+            mockPackage(null);
+            const container = createContainer();
+            const logger = container.resolve(Logger);
+            const service = container.resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.0.0", "references.json")).toBeNull();
+            expect(logger.warn).toHaveBeenCalled();
         });
     });
 });

@@ -24,7 +24,11 @@ import { UpgradeRunnerFeature } from "./service/UpgradeRunner/index.js";
 import { ApplicationFeature } from "./base/Application/index.js";
 import { Responder, ResponderFeature } from "./base/Responder/index.js";
 import { TimerFeature } from "./base/Timer/index.js";
-import { ReferencesFeature } from "./service/References/index.js";
+import {
+    loadReferences,
+    ReferencesFeature,
+    ReferencesService
+} from "./service/References/index.js";
 
 interface ICreateContainerParams {
     version: string;
@@ -103,7 +107,6 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     PackageJsonFeature.register(container);
     PackageManagerFeature.register(container);
     RegistryFeature.register(container);
-    ReferencesFeature.register(container);
 
     const logger = container.resolve(Logger);
     /**
@@ -112,6 +115,7 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
     const responder = container.resolve(Responder);
     let targetVersion: Version | null = null;
     let installedVersion: Version | null = null;
+    let references: ReferencesService.Reference[] | null = null;
     try {
         logger.debug("Resolving target version...");
         /**
@@ -140,12 +144,22 @@ export const createContainer = async (params: ICreateContainerParams): Promise<C
             joinPath: params.joinPath
         });
         logger.debug(`Installed version loaded: ${installedVersion.raw}`);
+        /**
+         * references.json of the version that will be installed, fetched before anything
+         * changes so a missing file stops the upgrade instead of failing after the install.
+         */
+        logger.debug(`Loading references.json for ${resolved.raw}...`);
+        references = await loadReferences({
+            registry: container.resolve(RegistryService),
+            version: resolved
+        });
     } catch (ex) {
         responder.error(ex.message, 0);
         // Dead at runtime (responder.error is `never`), kept so TS can narrow
-        // targetVersion/installedVersion to non-null after the try/catch.
+        // targetVersion/installedVersion/references to non-null after the try/catch.
         process.exit();
     }
+    ReferencesFeature.register(container, { references });
     ContextFeature.register(container, {
         cwd: params.cwd,
         registry: params.registry,

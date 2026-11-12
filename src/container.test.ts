@@ -13,12 +13,43 @@ vi.mock("node:fs");
 import { loadJsonFileSync } from "load-json-file";
 import fs from "node:fs";
 import { createContainer } from "./container.js";
+import { createTarball } from "./__tests__/utils/createTarball.js";
+import { ReferencesService } from "./service/References/index.js";
 
-const mockRegistry = (versions: Record<string, unknown>, latest: string) => {
-    vi.spyOn(global, "fetch").mockResolvedValue({
-        ok: true,
-        json: async () => ({ "dist-tags": { latest }, versions })
-    } as Response);
+const TARBALL_URL = "https://registry.test/tarball.tgz";
+
+/**
+ * Every version in `versions` points at one tarball that holds `references.json` in both the
+ * `@webiny/cli` and the `@webiny/dependency-versions` layout.
+ */
+const mockRegistry = (
+    versions: Record<string, unknown>,
+    latest: string,
+    tarball: Buffer | null = createTarball({
+        "files/references.json": JSON.stringify({
+            references: [{ name: "react", versions: [{ version: "18.3.1" }] }]
+        }),
+        "references.json": JSON.stringify({
+            references: [{ name: "react", versions: [{ version: "19.3.1" }] }]
+        })
+    })
+) => {
+    const withTarballs = Object.fromEntries(
+        Object.keys(versions).map(version => [version, { dist: { tarball: TARBALL_URL } }])
+    );
+    vi.spyOn(global, "fetch").mockImplementation(async input => {
+        if (input === TARBALL_URL) {
+            return {
+                ok: tarball !== null,
+                status: tarball ? 200 : 404,
+                arrayBuffer: async () => tarball
+            } as unknown as Response;
+        }
+        return {
+            ok: true,
+            json: async () => ({ "dist-tags": { latest }, versions: withTarballs })
+        } as Response;
+    });
 };
 
 const mockFs = (installedVersion: string) => {
@@ -191,6 +222,26 @@ describe("createContainer", () => {
         await createContainer(createParams());
 
         expect(loadJsonFileSync).toHaveBeenCalledWith("/project/node_modules/webiny/package.json");
+    });
+
+    it("registers references.json read from the registry tarball", async () => {
+        mockRegistry({ "6.1.0": {} }, "6.1.0");
+        mockFs("6.0.0");
+
+        const container = await createContainer(createParams());
+        const references = container.resolve(ReferencesService);
+
+        expect(references.getVersion("react")).toBe("19.3.1");
+        expect(fetch).toHaveBeenCalledWith(
+            "https://registry.npmjs.org/@webiny/dependency-versions"
+        );
+    });
+
+    it("exits when no package in the registry has references.json for the version", async () => {
+        mockRegistry({ "6.1.0": {} }, "6.1.0", null);
+        mockFs("6.0.0");
+
+        await expect(createContainer(createParams())).rejects.toThrow("process.exit called");
     });
 
     it("uses installVersion for registry validation and positional version for targetVersion", async () => {
