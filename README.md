@@ -213,8 +213,8 @@ The runner will automatically discover and execute the script when `6.2.0` is pa
 | [Git](src/service/Git/README.md)                       | Checks working-tree cleanliness and rolls back changes via `git restore`.      |
 | [PackageJson](src/service/PackageJson/README.md)       | Low-level load/mutate/save for any `package.json` file.                        |
 | [PackageManager](src/service/PackageManager/README.md) | Auto-detects yarn/pnpm/npm and exposes `install`, `version`, `update`.         |
-| [References](src/service/References/README.md)         | Reads `references.json` from `@webiny/cli-core` or `@webiny/cli`.              |
-| [Registry](src/service/Registry/README.md)             | Queries an npm registry for latest or specific package versions.               |
+| [References](src/service/References/README.md)         | Fetches the target version's `references.json` from the registry.              |
+| [Registry](src/service/Registry/README.md)             | Queries an npm registry for package versions and reads files from tarballs.    |
 | [UpgradeHandler](src/service/UpgradeHandler/README.md) | Orchestrates a single version's upgrade lifecycle with git guard and rollback. |
 | [UpgradeRunner](src/service/UpgradeRunner/README.md)   | Discovers and runs versioned upgrade directories in semver order.              |
 

@@ -1,9 +1,9 @@
 export class ReferencesFileMissingError extends Error {
     public readonly name = "ReferencesFileMissingError";
 
-    public constructor(public readonly paths: string[]) {
+    public constructor(public readonly sources: string[]) {
         super(
-            `Failed to load references.json from ${paths.map(path => `"${path}"`).join(" or ")}. Make sure @webiny/cli-core (6.6.0 and later) or @webiny/cli (before 6.6.0) is installed.`
+            `Failed to load references.json from ${sources.map(source => `"${source}"`).join(" or ")}. Check that the version is published and the registry is reachable.`
         );
     }
 }
