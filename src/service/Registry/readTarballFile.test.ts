@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { describe, it, expect } from "vitest";
 import { readTarballFile } from "./readTarballFile.js";
 import { createTarball } from "../../__tests__/utils/createTarball.js";
@@ -26,6 +27,12 @@ describe("readTarballFile", () => {
     it("returns null when the tarball doesn't have the file", () => {
         const tarball = createTarball({ "package.json": "{}" });
         expect(readTarballFile(tarball, "references.json")).toBeNull();
+    });
+
+    it("returns null when the archive ends without end-of-archive blocks", () => {
+        const tar = gunzipSync(createTarball({ "package.json": "{}" }));
+        const truncated = gzipSync(tar.subarray(0, 1024));
+        expect(readTarballFile(truncated, "references.json")).toBeNull();
     });
 
     it("reads a tarball made by the system tar", () => {

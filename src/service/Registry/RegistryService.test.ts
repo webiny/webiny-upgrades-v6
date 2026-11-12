@@ -197,6 +197,23 @@ describe("RegistryService", () => {
             expect(logger.warn).not.toHaveBeenCalled();
         });
 
+        it("returns null and logs an error when the tarball download throws", async () => {
+            mockPackage(createTarball({ "references.json": "content" }));
+            const fetchMock = vi.mocked(global.fetch);
+            const metadataFetch = fetchMock.getMockImplementation()!;
+            fetchMock.mockImplementation(async input => {
+                if (input === TARBALL_URL) {
+                    throw new Error("socket hang up");
+                }
+                return metadataFetch(input);
+            });
+            const container = createContainer();
+            const logger = container.resolve(Logger);
+            const service = container.resolve(RegistryService);
+            expect(await service.getFile("@webiny/cli", "6.0.0", "references.json")).toBeNull();
+            expect(logger.error).toHaveBeenCalled();
+        });
+
         it("returns null and logs a warning when the tarball download fails", async () => {
             mockPackage(null);
             const container = createContainer();
