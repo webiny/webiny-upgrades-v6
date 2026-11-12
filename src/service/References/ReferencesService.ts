@@ -7,7 +7,15 @@ import { Context } from "../../base/Context/index.js";
 import { ReferencesFileInvalidError } from "./ReferencesFileInvalidError.js";
 import { ReferencesFileMissingError } from "./ReferencesFileMissingError.js";
 
-const REFERENCES_FILE_SEGMENTS = ["node_modules", "@webiny", "cli", "files", "references.json"];
+/**
+ * From 6.6.0 `references.json` ships with `@webiny/cli-core`. Before that it shipped with
+ * `@webiny/cli`, which 6.6.0 replaces with `@webiny/cli-aws`. Mid-upgrade, before the install,
+ * the project still has the old one, so both are tried, the current location first.
+ */
+const REFERENCES_FILE_CANDIDATES = [
+    ["node_modules", "@webiny", "cli-core", "files", "references.json"],
+    ["node_modules", "@webiny", "cli", "files", "references.json"]
+];
 
 interface IReferenceFile {
     references: IReference[];
@@ -33,17 +41,22 @@ class ReferencesServiceImpl implements ReferencesServiceAbstraction.Interface {
     }
 
     private load(): IReference[] {
-        const filePath = this.context.resolve(...REFERENCES_FILE_SEGMENTS);
-        let raw: IReferenceFile;
-        try {
-            raw = loadJsonFileSync<IReferenceFile>(filePath);
-        } catch {
-            throw new ReferencesFileMissingError(filePath);
+        const filePaths = REFERENCES_FILE_CANDIDATES.map(segments =>
+            this.context.resolve(...segments)
+        );
+        for (const filePath of filePaths) {
+            let raw: IReferenceFile;
+            try {
+                raw = loadJsonFileSync<IReferenceFile>(filePath);
+            } catch {
+                continue;
+            }
+            if (!raw?.references?.length) {
+                throw new ReferencesFileInvalidError(filePath);
+            }
+            return raw.references;
         }
-        if (!raw?.references?.length) {
-            throw new ReferencesFileInvalidError(filePath);
-        }
-        return raw.references;
+        throw new ReferencesFileMissingError(filePaths);
     }
 }
 

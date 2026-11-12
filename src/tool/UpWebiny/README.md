@@ -1,6 +1,6 @@
 # UpWebiny
 
-Pins all `@webiny/*` packages in a project's `package.json` to a given target version in a single operation. It also normalises placement — any `@webiny/*` packages found in `devDependencies` or `peerDependencies` are moved to `dependencies`, correcting a placement bug present in Webiny 6.0.0. The result is written back to disk via `PackageJsonTool`.
+Pins all `@webiny/*` packages in a project's `package.json` to a given target version in a single operation. It also normalises placement — any `@webiny/*` packages found in `devDependencies` or `peerDependencies` are moved to `dependencies`, correcting a placement bug present in Webiny 6.0.0. `webiny` and `@webiny/mcp` are always set. `@webiny/cli` is updated only when the project already has it: from 6.6.0 the CLI is `@webiny/cli-aws` and `@webiny/cli` is no longer published. The result is written back to disk via `PackageJsonTool`.
 
 ## API
 

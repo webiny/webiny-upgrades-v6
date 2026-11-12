@@ -1,6 +1,8 @@
 # References
 
-Reads the `references.json` file bundled with `@webiny/cli` to expose the canonical package versions that the upgrade framework expects. Upgrade scripts use this service to look up the expected version of a third-party dependency (e.g. React, TypeScript) so they can pin it correctly or check for drift via `DependencyGuard`.
+Reads the `references.json` file bundled with `@webiny/cli-core` (from 6.6.0) or `@webiny/cli` (before 6.6.0) to expose the canonical package versions that the upgrade framework expects. Upgrade scripts use this service to look up the expected version of a third-party dependency (e.g. React, TypeScript) so they can pin it correctly or check for drift via `DependencyGuard`.
+
+`node_modules/@webiny/cli-core/files/references.json` is tried first, then `node_modules/@webiny/cli/files/references.json`. During a 6.6.0 upgrade only the second exists until the install runs, and only the first exists after it.
 
 ## API
 
@@ -13,7 +15,7 @@ Reads the `references.json` file bundled with `@webiny/cli` to expose the canoni
 | `ReferencesService.ReferenceVersionFile` | type              | `{ file: string; types: PackageType[] }` — which dep sections a version applies to. |
 | `ReferencesService.PackageType`          | enum              | `dependencies \| devDependencies \| peerDependencies \| resolutions`                |
 | `ReferencesFeature`                      | feature           | Registers the concrete `ReferencesService` implementation.                          |
-| `ReferencesFileMissingError`             | error             | Thrown when `references.json` cannot be found on disk.                              |
+| `ReferencesFileMissingError`             | error             | Thrown when `references.json` is in neither location. `paths` lists both.           |
 | `ReferencesFileInvalidError`             | error             | Thrown when `references.json` cannot be parsed as valid JSON.                       |
 
 ## Usage

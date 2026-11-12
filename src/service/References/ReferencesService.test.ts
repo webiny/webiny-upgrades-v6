@@ -70,6 +70,53 @@ describe("ReferencesService", () => {
         });
     });
 
+    describe("file location", () => {
+        const CLI_CORE = "node_modules/@webiny/cli-core/files/references.json";
+        const CLI = "node_modules/@webiny/cli/files/references.json";
+
+        const mockFiles = (files: Record<string, unknown>) => {
+            (loadJsonFileSync as any).mockImplementation((path: string) => {
+                if (!(path in files)) {
+                    throw new Error("ENOENT");
+                }
+                return files[path];
+            });
+        };
+
+        it("reads references.json from @webiny/cli-core", () => {
+            mockFiles({
+                [CLI_CORE]: { references: [{ name: "react", versions: [{ version: "19.3.1" }] }] }
+            });
+            const service = createContainer().resolve(ReferencesService);
+            expect(service.getVersion("react")).toBe("19.3.1");
+        });
+
+        it("falls back to @webiny/cli when @webiny/cli-core has no references.json", () => {
+            mockFiles({
+                [CLI]: { references: [{ name: "react", versions: [{ version: "18.3.1" }] }] }
+            });
+            const service = createContainer().resolve(ReferencesService);
+            expect(service.getVersion("react")).toBe("18.3.1");
+        });
+
+        it("prefers @webiny/cli-core when both have references.json", () => {
+            mockFiles({
+                [CLI_CORE]: { references: [{ name: "react", versions: [{ version: "19.3.1" }] }] },
+                [CLI]: { references: [{ name: "react", versions: [{ version: "18.3.1" }] }] }
+            });
+            const service = createContainer().resolve(ReferencesService);
+            expect(service.getVersion("react")).toBe("19.3.1");
+        });
+
+        it("names both locations when neither has references.json", () => {
+            mockFiles({});
+            const service = createContainer().resolve(ReferencesService);
+            expect(() => service.getVersion("react")).toThrow(
+                `Failed to load references.json from "${CLI_CORE}" or "${CLI}".`
+            );
+        });
+    });
+
     describe("error handling", () => {
         it("throws ReferencesFileMissingError when references.json cannot be loaded", () => {
             (loadJsonFileSync as any).mockImplementation(() => {
