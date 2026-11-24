@@ -111,6 +111,7 @@ file.imports.remove(options: RemoveImportOptions): void
 file.jsx.addChild(tag: string, options?: ChildOptions): void
 file.jsx.insertBefore(ref: string, tag: string, options?: ChildOptions): void
 file.jsx.insertAfter(ref: string, tag: string, options?: ChildOptions): void
+file.jsx.contains(tag: string): boolean    // true if <tag> is rendered anywhere in the file, at any depth
 
 // file
 file.save(): void

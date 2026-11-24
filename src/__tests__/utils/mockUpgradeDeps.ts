@@ -2,6 +2,7 @@ import path from "node:path";
 import { vi } from "vitest";
 import type { Container as DIContainer } from "@webiny/di";
 import { Context } from "../../base/Context/index.js";
+import { Logger } from "../../base/Logger/index.js";
 import { Version } from "../../base/Version/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { PackageJsonLoadError } from "../../service/PackageJson/index.js";
@@ -13,7 +14,7 @@ const MOCK_CWD = "/project";
 
 /**
  * Registers mock instances of PackageJsonTool, ReferencesService, PackageManagerService,
- * and Context into the container. Pass a file (or null) to control what
+ * Logger and Context into the container. Pass a file (or null) to control what
  * PackageJsonTool.load returns. PackageManagerService.name() defaults to "yarn" to match
  * the mock package.json fixture (packageManager: "yarn@4.10.0").
  *
@@ -43,6 +44,14 @@ export const registerUpgradeDeps = (
         version: vi.fn(),
         name: vi.fn().mockReturnValue("yarn"),
         update: vi.fn().mockResolvedValue(undefined)
+    });
+    container.registerInstance(Logger, {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        fatal: vi.fn(),
+        done: vi.fn()
     });
     container.registerInstance(Context, {
         cwd: MOCK_CWD,

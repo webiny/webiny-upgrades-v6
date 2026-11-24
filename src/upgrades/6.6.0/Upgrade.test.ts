@@ -7,6 +7,8 @@ import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { createMockPackageJsonFile } from "../../__tests__/utils/mockPackageJsonFile.js";
 import type { PackageJsonFile } from "../../service/PackageJson/abstraction.js";
 import { Version } from "../../base/Version/index.js";
+import { Logger } from "../../base/Logger/index.js";
+import { createMockLogger } from "../../__tests__/utils/mockLogger.js";
 
 const v = (version: string) => Version.create(version);
 
@@ -18,7 +20,9 @@ const params = (target: string, current: string) => ({
 const createContainer = (
     packageJsonFile: PackageJsonFile.Interface = createMockPackageJsonFile({
         dependencies: { webiny: "6.5.0", "@webiny/cli": "6.5.0" }
-    })
+    }),
+    // Results of successive `jsx.contains("Api.Mailer.Smtp")` calls.
+    containsSmtp: boolean[] = [false, true]
 ) => {
     const container = new Container();
     container.registerInstance(PackageJsonTool, {
@@ -28,13 +32,22 @@ const createContainer = (
     });
     const mockWebinyConfigFile = {
         imports: { add: vi.fn(), remove: vi.fn() },
-        jsx: { addChild: vi.fn(), insertBefore: vi.fn(), insertAfter: vi.fn() },
+        jsx: {
+            addChild: vi.fn(),
+            insertBefore: vi.fn(),
+            insertAfter: vi.fn(),
+            contains: containsSmtp.reduce(
+                (mock, value) => mock.mockReturnValueOnce(value),
+                vi.fn().mockReturnValue(containsSmtp[containsSmtp.length - 1])
+            )
+        },
         save: vi.fn()
     };
     container.registerInstance(WebinyConfigTool, {
         read: vi.fn().mockReturnValue(mockWebinyConfigFile),
         save: vi.fn()
     });
+    container.registerInstance(Logger, createMockLogger());
     container.register(Upgrade660);
     return container;
 };
@@ -125,5 +138,43 @@ describe("Upgrade 6.6.0 - execute", () => {
         expect(file.getDependency("@webiny/cli-aws")).toBeNull();
         expect(file.getDependency("@webiny/db-dynamodb")).toBeNull();
         expect(container.resolve(PackageJsonTool).save).not.toHaveBeenCalled();
+    });
+
+    it("adds <Api.Mailer.Smtp /> and imports Api when the project does not render it", async () => {
+        const container = createContainer();
+        await container.resolve(Upgrade).execute();
+
+        const mockFile = vi.mocked(container.resolve(WebinyConfigTool).read).mock.results[0].value;
+        expect(mockFile.jsx.addChild).toHaveBeenCalledWith(
+            "Api.Mailer.Smtp",
+            expect.objectContaining({ comment: expect.stringContaining("SMTP") })
+        );
+        expect(mockFile.imports.add).toHaveBeenCalledWith({
+            package: "webiny/extensions",
+            imports: ["Api"]
+        });
+    });
+
+    it("leaves <Api.Mailer.Smtp> alone when the project already renders it", async () => {
+        const container = createContainer(undefined, [true]);
+        await container.resolve(Upgrade).execute();
+
+        const mockFile = vi.mocked(container.resolve(WebinyConfigTool).read).mock.results[0].value;
+        expect(mockFile.jsx.addChild).not.toHaveBeenCalledWith(
+            "Api.Mailer.Smtp",
+            expect.anything()
+        );
+        expect(mockFile.imports.add).not.toHaveBeenCalled();
+    });
+
+    it("warns and adds no import when <Api.Mailer.Smtp /> could not be added", async () => {
+        const container = createContainer(undefined, [false, false]);
+        await container.resolve(Upgrade).execute();
+
+        const mockFile = vi.mocked(container.resolve(WebinyConfigTool).read).mock.results[0].value;
+        expect(mockFile.imports.add).not.toHaveBeenCalled();
+        expect(container.resolve(Logger).warn).toHaveBeenCalledWith(
+            expect.stringContaining("<Api.Mailer.Smtp />")
+        );
     });
 });

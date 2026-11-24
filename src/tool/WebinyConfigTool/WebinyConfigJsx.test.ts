@@ -85,6 +85,22 @@ describe("WebinyConfigJsx — addChild", () => {
         };
     };
 
+    // ── contains ───────────────────────────────────────────────────────────────
+
+    it("contains() finds an element at any depth, self-closing or with children", () => {
+        const { jsx } = createJsx(FIXTURE_WITH_BLOCK);
+        expect(jsx.contains("ChildB")).toBe(true);
+        expect(jsx.contains("Infra.Env.IsProd")).toBe(true);
+        expect(jsx.contains("ProjectAws")).toBe(true);
+        expect(jsx.contains("Infra.Foo")).toBe(false);
+    });
+
+    it("contains() sees an element added in the same session", () => {
+        const { jsx } = createJsx(FIXTURE);
+        jsx.addChild("Infra.Foo");
+        expect(jsx.contains("Infra.Foo")).toBe(true);
+    });
+
     // ── basic insert ───────────────────────────────────────────────────────────
 
     it("inserts a self-closing element after the last fragment child", () => {

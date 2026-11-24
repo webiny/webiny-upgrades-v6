@@ -10,6 +10,7 @@ interface IWebinyConfigJsx {
     addChild(tag: string, options?: AddChildOptions): void;
     insertBefore(ref: string, tag: string, options?: AddChildOptions): void;
     insertAfter(ref: string, tag: string, options?: AddChildOptions): void;
+    contains(tag: string): boolean;
 }
 
 type IImportEntry = string | Record<string, string>;

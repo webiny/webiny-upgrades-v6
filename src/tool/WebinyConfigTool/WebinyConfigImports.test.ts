@@ -66,6 +66,18 @@ describe("WebinyConfigImports — add", () => {
         };
     };
 
+    it("skips a name imported by another declaration from the same package", () => {
+        const { imports, save, read } = createImports(`import { Infra } from "@webiny/extensions";
+import { Api } from "@webiny/extensions";
+
+export const Extensions = () => <></>;
+`);
+        imports.add({ package: "@webiny/extensions", imports: ["Api"] });
+        save();
+        expect(read().match(/\bApi\b/g)).toHaveLength(1);
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Api"));
+    });
+
     it("adds a new import declaration when no import from the package exists", () => {
         const { imports, save, read } = createImports(FIXTURE);
         imports.add({ package: "@webiny/extensions", imports: ["Infra"] });
