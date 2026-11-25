@@ -85,6 +85,47 @@ describe("WebinyConfigJsx — addChild", () => {
         };
     };
 
+    // ── contains ───────────────────────────────────────────────────────────────
+
+    it("contains() finds an element at any depth, self-closing or with children", () => {
+        const { jsx } = createJsx(FIXTURE_WITH_BLOCK);
+        expect(jsx.contains("ChildB")).toBe(true);
+        expect(jsx.contains("Infra.Env.IsProd")).toBe(true);
+        expect(jsx.contains("ProjectAws")).toBe(true);
+        expect(jsx.contains("Infra.Foo")).toBe(false);
+    });
+
+    it("contains() sees an element added in the same session", () => {
+        const { jsx } = createJsx(FIXTURE);
+        jsx.addChild("Infra.Foo");
+        expect(jsx.contains("Infra.Foo")).toBe(true);
+    });
+
+    it("contains() inside a children callback on an existing element searches the whole file", () => {
+        const { jsx } = createJsx(FIXTURE_WITH_BLOCK);
+        const found: Record<string, boolean> = {};
+        jsx.addChild("Infra.Env.IsProd", {
+            children: b => {
+                found.ProjectAws = b.contains("ProjectAws");
+                found.Missing = b.contains("Infra.Foo");
+            }
+        });
+        expect(found).toEqual({ ProjectAws: true, Missing: false });
+    });
+
+    it("contains() inside a children callback on a new element sees only its own children", () => {
+        const { jsx } = createJsx(FIXTURE);
+        const found: Record<string, boolean> = {};
+        jsx.addChild("Infra.New", {
+            children: b => {
+                b.addChild("Infra.New.Child");
+                found.Child = b.contains("Infra.New.Child");
+                found.ProjectAws = b.contains("ProjectAws");
+            }
+        });
+        expect(found).toEqual({ Child: true, ProjectAws: false });
+    });
+
     // ── basic insert ───────────────────────────────────────────────────────────
 
     it("inserts a self-closing element after the last fragment child", () => {

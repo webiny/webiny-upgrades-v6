@@ -37,6 +37,15 @@ export class WebinyConfigJsx implements WebinyConfigTool.Jsx {
         this.addToContainer([], tag, options, { mode: "after", ref });
     }
 
+    // Whether `<tag>` is rendered anywhere in the file, at any depth.
+    public contains(tag: string): boolean {
+        const tagNames = [
+            ...this.sourceFile.getDescendantsOfKind(SyntaxKind.JsxOpeningElement),
+            ...this.sourceFile.getDescendantsOfKind(SyntaxKind.JsxSelfClosingElement)
+        ].map(element => element.getTagNameNode().getText());
+        return tagNames.includes(tag);
+    }
+
     private addToContainer(
         containerPath: string[],
         tag: string,
@@ -173,7 +182,8 @@ export class WebinyConfigJsx implements WebinyConfigTool.Jsx {
             },
             insertAfter: (ref: string, tag: string, opts: WebinyConfigTool.ChildOptions = {}) => {
                 this.addToContainer(containerPath, tag, opts, { mode: "after", ref });
-            }
+            },
+            contains: (tag: string) => this.contains(tag)
         };
     }
 

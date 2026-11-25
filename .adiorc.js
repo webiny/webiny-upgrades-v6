@@ -15,6 +15,6 @@ export default {
     ],
     peerDependencies: true
   },
-  ignoreDirs: ["node_modules/", "dist/", "build/", "nextjs/"],
+  ignoreDirs: ["node_modules/", "dist/", "build/", "nextjs/", "__tests__/fixtures/"],
   packages: ["./"]
 };

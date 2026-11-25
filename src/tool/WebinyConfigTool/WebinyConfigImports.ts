@@ -45,9 +45,10 @@ export class WebinyConfigImports implements WebinyConfigTool.Imports {
             return { name, alias };
         };
 
-        const existing = this.sourceFile
+        const declarations = this.sourceFile
             .getImportDeclarations()
-            .find(d => d.getModuleSpecifierValue() === options.package);
+            .filter(d => d.getModuleSpecifierValue() === options.package);
+        const existing = declarations[0];
 
         if (!existing) {
             this.sourceFile.addImportDeclaration({
@@ -60,7 +61,10 @@ export class WebinyConfigImports implements WebinyConfigTool.Imports {
             return;
         }
 
-        const importedNames = new Set(existing.getNamedImports().map(s => s.getName()));
+        // A project may import from the same package on several lines, e.g. one per namespace.
+        const importedNames = new Set(
+            declarations.flatMap(d => d.getNamedImports().map(s => s.getName()))
+        );
         for (const entry of options.imports) {
             const { name, alias } = normalize(entry);
             if (importedNames.has(name)) {

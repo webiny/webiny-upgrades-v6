@@ -2,13 +2,15 @@ import { Upgrade as UpgradeAbstraction } from "../../base/Upgrade/index.js";
 import { PackageJsonTool } from "../../tool/PackageJsonTool/index.js";
 import { WebinyConfigTool } from "../../tool/WebinyConfigTool/index.js";
 import { Version } from "../../base/Version/index.js";
+import { Logger } from "../../base/Logger/index.js";
 
 class UpgradeImpl implements UpgradeAbstraction.Interface {
     public readonly version = Version.create("6.6.0");
 
     public constructor(
         private readonly packageJsonTool: PackageJsonTool.Interface,
-        private readonly webinyConfigTool: WebinyConfigTool.Interface
+        private readonly webinyConfigTool: WebinyConfigTool.Interface,
+        private readonly logger: Logger.Interface
     ) {}
 
     public async canHandle({
@@ -48,11 +50,29 @@ class UpgradeImpl implements UpgradeAbstraction.Interface {
         webinyConfig.jsx.addChild("Infra.Core.S3Bucket.Versioning", {
             props: { enabled: "false" }
         });
+
+        // From 6.6.0, SMTP is no longer built in: a project sends mail through the transport it
+        // renders. Projects that set SMTP in code already render `<Api.Mailer.Smtp ... />`, which
+        // now also mounts the transport. The rest get it without props, so the settings stored in
+        // Settings > Mailer are used as before.
+        if (!webinyConfig.jsx.contains("Api.Mailer.Smtp")) {
+            webinyConfig.jsx.addChild("Api.Mailer.Smtp", {
+                comment:
+                    "SMTP mail, set in Settings > Mailer. To use Resend, SendGrid or SES, install that extension and remove this."
+            });
+            if (webinyConfig.jsx.contains("Api.Mailer.Smtp")) {
+                webinyConfig.imports.add({ package: "webiny/extensions", imports: ["Api"] });
+            } else {
+                this.logger.warn(
+                    'Could not add <Api.Mailer.Smtp /> to webiny.config.tsx. Without it, the project sends no mail. Add `import { Api } from "webiny/extensions";` and render <Api.Mailer.Smtp /> in the Extensions component.'
+                );
+            }
+        }
         this.webinyConfigTool.save(webinyConfig);
     }
 }
 
 export const Upgrade = UpgradeAbstraction.createImplementation({
     implementation: UpgradeImpl,
-    dependencies: [PackageJsonTool, WebinyConfigTool]
+    dependencies: [PackageJsonTool, WebinyConfigTool, Logger]
 });

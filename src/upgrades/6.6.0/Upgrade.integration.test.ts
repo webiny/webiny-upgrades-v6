@@ -25,6 +25,8 @@ describe("Upgrade 6.6.0 - integration", () => {
         expect(webinyConfig).toContain("<Infra.Core.DynamoDb.Pitr enabled={false} />");
         expect(webinyConfig).toContain("<Infra.Core.S3Bucket.Versioning enabled={false} />");
         expect(webinyConfig).toContain('<Infra.Aws.DefaultRegion name={"eu-central-1"} />');
+        expect(webinyConfig).toContain("<Api.Mailer.Smtp />");
+        expect(webinyConfig).toContain('import { Api } from "webiny/extensions";');
 
         expect(harness.upgradeHistory.list()).toContainEqual(
             expect.objectContaining({ version: "6.6.0" })
@@ -48,5 +50,23 @@ describe("Upgrade 6.6.0 - integration", () => {
         const webinyConfig = harness.readFile("webiny.config.tsx");
         expect(webinyConfig.match(/<Infra\.Core\.DynamoDb\.Pitr /g)).toHaveLength(1);
         expect(webinyConfig.match(/<Infra\.Core\.S3Bucket\.Versioning /g)).toHaveLength(1);
+        expect(webinyConfig.match(/<Api\.Mailer\.Smtp /g)).toHaveLength(1);
+    });
+
+    it("keeps a project's own <Api.Mailer.Smtp> and its Api import as they are", async () => {
+        const harness = await createUpgradeIntegrationHarness({
+            fixtureDir: path.join(import.meta.dirname, "__tests__", "fixtures", "with-smtp"),
+            currentVersion: "6.5.0",
+            targetVersion: "6.6.0"
+        });
+
+        await harness.run();
+
+        const webinyConfig = harness.readFile("webiny.config.tsx");
+        expect(webinyConfig.match(/<Api\.Mailer\.Smtp/g)).toHaveLength(1);
+        expect(webinyConfig).toContain('host={"smtp.example.com"}');
+        expect(
+            webinyConfig.match(/import \{[^}]*\bApi\b[^}]*\} from "webiny\/extensions"/g)
+        ).toHaveLength(1);
     });
 });

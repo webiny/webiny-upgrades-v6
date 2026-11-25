@@ -16,8 +16,11 @@ export class JsxTextBuilder {
         if (options.children) {
             const childLines: string[] = [];
             const childIndent = indent + "    ";
+            // The element is new, so its only children are the ones added through this builder.
+            const childTags = new Set<string>();
             const syntheticBuilder: WebinyConfigTool.Jsx = {
                 addChild: (childTag: string, childOpts?: WebinyConfigTool.ChildOptions) => {
+                    childTags.add(childTag);
                     childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
                 },
                 insertBefore: (
@@ -25,6 +28,7 @@ export class JsxTextBuilder {
                     childTag: string,
                     childOpts?: WebinyConfigTool.ChildOptions
                 ) => {
+                    childTags.add(childTag);
                     childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
                 },
                 insertAfter: (
@@ -32,8 +36,10 @@ export class JsxTextBuilder {
                     childTag: string,
                     childOpts?: WebinyConfigTool.ChildOptions
                 ) => {
+                    childTags.add(childTag);
                     childLines.push(this.buildElement(childTag, childOpts ?? {}, childIndent));
-                }
+                },
+                contains: (childTag: string) => childTags.has(childTag)
             };
             options.children(syntheticBuilder);
             lines.push(`${indent}<${tag}${propsStr}>`);

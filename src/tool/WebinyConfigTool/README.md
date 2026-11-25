@@ -4,17 +4,17 @@ A DI-registered tool for reading and programmatically modifying a project's `web
 
 ## API
 
-| Export                           | Kind              | Description                                                                             |
-| -------------------------------- | ----------------- | --------------------------------------------------------------------------------------- |
-| `WebinyConfigTool`               | abstraction token | DI token for the tool; resolved to call `read` / `save`.                                |
-| `WebinyConfigTool.Interface`     | type              | `{ read(): File; save(file: File): void }`                                              |
-| `WebinyConfigTool.File`          | type              | `{ imports: Imports; jsx: Jsx; save(): void }`                                          |
-| `WebinyConfigTool.Imports`       | type              | `{ add(opts: ImportOptions): void; remove(opts: RemoveImportOptions): void }`           |
-| `WebinyConfigTool.Jsx`           | type              | `{ addChild(tag, opts?); insertBefore(ref, tag, opts?); insertAfter(ref, tag, opts?) }` |
-| `WebinyConfigTool.ChildOptions`  | type              | `{ comment?, props?, children? }` passed when adding/inserting elements.                |
-| `WebinyConfigTool.ImportEntry`   | type              | `string \| Record<string, string>` — plain name or `{ originalName: localAlias }`.      |
-| `WebinyConfigTool.ImportOptions` | type              | `{ package: string; imports: ImportEntry[] }` passed to `imports.add`.                  |
-| `WebinyConfigToolFeature`        | feature           | Registers the concrete implementation into the DI container.                            |
+| Export                           | Kind              | Description                                                                                            |
+| -------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `WebinyConfigTool`               | abstraction token | DI token for the tool; resolved to call `read` / `save`.                                               |
+| `WebinyConfigTool.Interface`     | type              | `{ read(): File; save(file: File): void }`                                                             |
+| `WebinyConfigTool.File`          | type              | `{ imports: Imports; jsx: Jsx; save(): void }`                                                         |
+| `WebinyConfigTool.Imports`       | type              | `{ add(opts: ImportOptions): void; remove(opts: RemoveImportOptions): void }`                          |
+| `WebinyConfigTool.Jsx`           | type              | `{ addChild(tag, opts?); insertBefore(ref, tag, opts?); insertAfter(ref, tag, opts?); contains(tag) }` |
+| `WebinyConfigTool.ChildOptions`  | type              | `{ comment?, props?, children? }` passed when adding/inserting elements.                               |
+| `WebinyConfigTool.ImportEntry`   | type              | `string \| Record<string, string>` — plain name or `{ originalName: localAlias }`.                     |
+| `WebinyConfigTool.ImportOptions` | type              | `{ package: string; imports: ImportEntry[] }` passed to `imports.add`.                                 |
+| `WebinyConfigToolFeature`        | feature           | Registers the concrete implementation into the DI container.                                           |
 
 ### `File` methods
 
@@ -26,7 +26,7 @@ A DI-registered tool for reading and programmatically modifying a project's `web
 
 | Method         | Description                                                                                                                                                                                                                                            |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `add(opts)`    | Adds named imports from a package. Creates a new import declaration if none exists for the package; merges into the existing one otherwise. Skips (with a warning) any name already imported.                                                          |
+| `add(opts)`    | Adds named imports from a package. Creates a new import declaration if none exists for the package; merges into the existing one otherwise. Skips (with a warning) any name already imported from the package, in any of its import declarations.      |
 | `remove(opts)` | Removes imports from a package. If `opts.imports` is omitted, removes the entire import declaration. Otherwise removes only the listed named imports, silently ignoring any that are absent; removes the whole declaration if no named imports remain. |
 
 ### `Jsx` methods (`file.jsx`)
@@ -36,6 +36,7 @@ A DI-registered tool for reading and programmatically modifying a project's `web
 | `addChild(tag, opts?)`          | Appends a JSX element inside the root `<Extensions>` fragment. If the element already exists and `opts.children` is provided, merges children into it (structural merge); otherwise warns and no-ops. |
 | `insertBefore(ref, tag, opts?)` | Inserts a JSX element before the first sibling matching `ref`; no-op if `tag` already exists.                                                                                                         |
 | `insertAfter(ref, tag, opts?)`  | Inserts a JSX element after the first sibling matching `ref`; no-op if `tag` already exists.                                                                                                          |
+| `contains(tag)`                 | Whether `<tag>` is rendered anywhere in the file, at any depth. `addChild` only checks the container's direct children.                                                                               |
 
 ## Usage
 
