@@ -101,6 +101,31 @@ describe("WebinyConfigJsx — addChild", () => {
         expect(jsx.contains("Infra.Foo")).toBe(true);
     });
 
+    it("contains() inside a children callback on an existing element searches the whole file", () => {
+        const { jsx } = createJsx(FIXTURE_WITH_BLOCK);
+        const found: Record<string, boolean> = {};
+        jsx.addChild("Infra.Env.IsProd", {
+            children: b => {
+                found.ProjectAws = b.contains("ProjectAws");
+                found.Missing = b.contains("Infra.Foo");
+            }
+        });
+        expect(found).toEqual({ ProjectAws: true, Missing: false });
+    });
+
+    it("contains() inside a children callback on a new element sees only its own children", () => {
+        const { jsx } = createJsx(FIXTURE);
+        const found: Record<string, boolean> = {};
+        jsx.addChild("Infra.New", {
+            children: b => {
+                b.addChild("Infra.New.Child");
+                found.Child = b.contains("Infra.New.Child");
+                found.ProjectAws = b.contains("ProjectAws");
+            }
+        });
+        expect(found).toEqual({ Child: true, ProjectAws: false });
+    });
+
     // ── basic insert ───────────────────────────────────────────────────────────
 
     it("inserts a self-closing element after the last fragment child", () => {
